@@ -1551,6 +1551,11 @@ TAILQ_HEAD(winlink_stack, winlink);
 #define PANE_STATUS_TOP_FLOATING 3
 #define PANE_STATUS_BOTTOM_FLOATING 4
 
+/* Pane border frame option. */
+#define PANE_FRAME_OFF 0
+#define PANE_FRAME_OUTER 1
+#define PANE_FRAME_ALL 2
+
 /* Pane scrollbars option. */
 #define PANE_SCROLLBARS_OFF 0
 #define PANE_SCROLLBARS_MODAL 1
@@ -3824,6 +3829,7 @@ void		 window_pane_send_theme_update(struct window_pane *);
 enum pane_lines	 window_pane_get_pane_lines(struct window_pane *);
 enum pane_lines	 window_get_pane_lines(struct window *);
 int		 window_get_pane_status(struct window *);
+int		 window_get_pane_frame(struct window *);
 int		 window_pane_get_pane_status(struct window_pane *);
 struct style_range *window_pane_status_get_range(struct window_pane *, u_int,
 		     u_int);
@@ -3864,6 +3870,8 @@ void		 layout_make_leaf(struct layout_cell *, struct window_pane *);
 void		 layout_make_node(struct layout_cell *, enum layout_type);
 int		 layout_cell_is_tiled(struct layout_cell *);
 int		 layout_cell_has_tiled_child(struct layout_cell *);
+void		 layout_pane_insets(struct window *, struct layout_cell *,
+		     struct layout_cell *, int, int *, int *, int *, int *);
 int		 layout_add_horizontal_border(struct layout_cell *,
 		     struct layout_cell *, int);
 void		 layout_fix_offsets(struct window *);

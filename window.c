@@ -73,6 +73,10 @@ static struct window_pane *window_pane_create(struct window *, u_int, u_int,
 static void	window_pane_destroy(struct window_pane *);
 static void	window_pane_free(struct window_pane *);
 static void	window_pane_scrollbar_timer(int, short, void *);
+static void	window_edge_borders(struct window *, int, int *, int *, int *,
+		    int *);
+static void	window_pane_cell_offset(struct window_pane *, int *, int *,
+		    u_int *, u_int *);
 static void	window_pane_full_size_offset(struct window_pane *, int *, int *,
 		    u_int *, u_int *);
 
@@ -944,37 +948,38 @@ window_get_active_at(struct window *w, u_int x, u_int y)
 struct window_pane *
 window_find_string(struct window *w, const char *s)
 {
-	u_int	x, y, top = 0, bottom = w->sy - 1;
-	int	status;
+	u_int	x, y, top, bottom, left, right;
+	int	status, bl, br, bt, bb;
 
 	x = w->sx / 2;
 	y = w->sy / 2;
 
 	status = window_get_pane_status(w);
-	if (status == PANE_STATUS_TOP)
-		top++;
-	else if (status == PANE_STATUS_BOTTOM)
-		bottom--;
+	window_edge_borders(w, status, &bl, &br, &bt, &bb);
+	top = bt;
+	bottom = w->sy - 1 - bb;
+	left = bl;
+	right = w->sx - 1 - br;
 
 	if (strcasecmp(s, "top") == 0)
 		y = top;
 	else if (strcasecmp(s, "bottom") == 0)
 		y = bottom;
 	else if (strcasecmp(s, "left") == 0)
-		x = 0;
+		x = left;
 	else if (strcasecmp(s, "right") == 0)
-		x = w->sx - 1;
+		x = right;
 	else if (strcasecmp(s, "top-left") == 0) {
-		x = 0;
+		x = left;
 		y = top;
 	} else if (strcasecmp(s, "top-right") == 0) {
-		x = w->sx - 1;
+		x = right;
 		y = top;
 	} else if (strcasecmp(s, "bottom-left") == 0) {
-		x = 0;
+		x = left;
 		y = bottom;
 	} else if (strcasecmp(s, "bottom-right") == 0) {
-		x = w->sx - 1;
+		x = right;
 		y = bottom;
 	} else
 		return (NULL);
@@ -2236,37 +2241,28 @@ window_pane_find_up(struct window_pane *wp)
 {
 	struct window		*w;
 	struct window_pane	*next, *best, **list;
-	int			 edge, left, right, end, status, found;
+	int			 edge, left, right, end, found;
 	int			 xoff, yoff;
 	u_int			 size, sx, sy;
 
 	if (wp == NULL)
 		return (NULL);
 	w = wp->window;
-	status = window_get_pane_status(w);
 
 	list = NULL;
 	size = 0;
 
-	window_pane_full_size_offset(wp, &xoff, &yoff, &sx, &sy);
+	window_pane_cell_offset(wp, &xoff, &yoff, &sx, &sy);
 
 	edge = yoff;
-	if (status == PANE_STATUS_TOP) {
-		if (edge == 1)
-			edge = (int)w->sy + 1;
-	} else if (status == PANE_STATUS_BOTTOM) {
-		if (edge == 0)
-			edge = (int)w->sy;
-	} else {
-		if (edge == 0)
-			edge = (int)w->sy + 1;
-	}
+	if (edge == 0)
+		edge = (int)w->sy + 1;
 
 	left = xoff;
 	right = xoff + (int)sx;
 
 	TAILQ_FOREACH(next, &w->panes, entry) {
-		window_pane_full_size_offset(next, &xoff, &yoff, &sx, &sy);
+		window_pane_cell_offset(next, &xoff, &yoff, &sx, &sy);
 		if (next == wp)
 			continue;
 		if (yoff + (int)sy + 1 != edge)
@@ -2297,37 +2293,28 @@ window_pane_find_down(struct window_pane *wp)
 {
 	struct window		*w;
 	struct window_pane	*next, *best, **list;
-	int			 edge, left, right, end, status, found;
+	int			 edge, left, right, end, found;
 	int			 xoff, yoff;
 	u_int			 size, sx, sy;
 
 	if (wp == NULL)
 		return (NULL);
 	w = wp->window;
-	status = window_get_pane_status(w);
 
 	list = NULL;
 	size = 0;
 
-	window_pane_full_size_offset(wp, &xoff, &yoff, &sx, &sy);
+	window_pane_cell_offset(wp, &xoff, &yoff, &sx, &sy);
 
 	edge = yoff + (int)sy + 1;
-	if (status == PANE_STATUS_TOP) {
-		if (edge >= (int)w->sy)
-			edge = 1;
-	} else if (status == PANE_STATUS_BOTTOM) {
-		if (edge >= (int)w->sy - 1)
-			edge = 0;
-	} else {
-		if (edge >= (int)w->sy)
-			edge = 0;
-	}
+	if (edge >= (int)w->sy)
+		edge = 0;
 
-	left = wp->xoff;
-	right = wp->xoff + (int)wp->sx;
+	left = xoff;
+	right = xoff + (int)sx;
 
 	TAILQ_FOREACH(next, &w->panes, entry) {
-		window_pane_full_size_offset(next, &xoff, &yoff, &sx, &sy);
+		window_pane_cell_offset(next, &xoff, &yoff, &sx, &sy);
 		if (next == wp)
 			continue;
 		if (yoff != edge)
@@ -2369,7 +2356,7 @@ window_pane_find_left(struct window_pane *wp)
 	list = NULL;
 	size = 0;
 
-	window_pane_full_size_offset(wp, &xoff, &yoff, &sx, &sy);
+	window_pane_cell_offset(wp, &xoff, &yoff, &sx, &sy);
 
 	edge = xoff;
 	if (edge == 0)
@@ -2379,7 +2366,7 @@ window_pane_find_left(struct window_pane *wp)
 	bottom = yoff + (int)sy;
 
 	TAILQ_FOREACH(next, &w->panes, entry) {
-		window_pane_full_size_offset(next, &xoff, &yoff, &sx, &sy);
+		window_pane_cell_offset(next, &xoff, &yoff, &sx, &sy);
 		if (next == wp)
 			continue;
 		if (xoff + (int)sx + 1 != edge)
@@ -2421,17 +2408,17 @@ window_pane_find_right(struct window_pane *wp)
 	list = NULL;
 	size = 0;
 
-	window_pane_full_size_offset(wp, &xoff, &yoff, &sx, &sy);
+	window_pane_cell_offset(wp, &xoff, &yoff, &sx, &sy);
 
 	edge = xoff + (int)sx + 1;
 	if (edge >= (int)w->sx)
 		edge = 0;
 
-	top = wp->yoff;
-	bottom = wp->yoff + (int)wp->sy;
+	top = yoff;
+	bottom = yoff + (int)sy;
 
 	TAILQ_FOREACH(next, &w->panes, entry) {
-		window_pane_full_size_offset(next, &xoff, &yoff, &sx, &sy);
+		window_pane_cell_offset(next, &xoff, &yoff, &sx, &sy);
 		if (next == wp)
 			continue;
 		if (xoff != edge)
@@ -2927,6 +2914,48 @@ window_pane_get_pane_lines(struct window_pane *wp)
 	else
 		oo = wp->options;
 	return (options_get_number(oo, "pane-border-lines"));
+}
+
+/* Which pane border frame mode is on? */
+int
+window_get_pane_frame(struct window *w)
+{
+	return (options_get_number(w->options, "pane-border-frame"));
+}
+
+/*
+ * Rows and columns of the window used by borders along its edges: the pane
+ * status line on its side and the frame if on.
+ */
+static void
+window_edge_borders(struct window *w, int status, int *left, int *right,
+    int *top, int *bottom)
+{
+	int	frame = (window_get_pane_frame(w) != PANE_FRAME_OFF);
+
+	*left = *right = frame;
+	*top = (frame || status == PANE_STATUS_TOP);
+	*bottom = (frame || status == PANE_STATUS_BOTTOM);
+}
+
+/*
+ * Pane geometry for adjacency: the layout cell when there is one, which is
+ * unaffected by status lines and frame insets, else the pane itself.
+ */
+static void
+window_pane_cell_offset(struct window_pane *wp, int *xoff, int *yoff,
+    u_int *sx, u_int *sy)
+{
+	struct layout_cell	*lc = wp->layout_cell;
+
+	if (lc == NULL || window_pane_is_floating(wp)) {
+		window_pane_full_size_offset(wp, xoff, yoff, sx, sy);
+		return;
+	}
+	*xoff = lc->g.xoff;
+	*yoff = lc->g.yoff;
+	*sx = lc->g.sx;
+	*sy = lc->g.sy;
 }
 
 int

@@ -6012,6 +6012,27 @@ and
 .Ql heavy
 will fall back to standard ACS line drawing when UTF\-8 is not supported.
 .Pp
+.It Xo Ic pane\-border\-frame
+.Op Ic off | outer | all
+.Xc
+Control how panes are framed.
+With
+.Ic off ,
+borders are drawn only between panes.
+With
+.Ic outer ,
+borders are also drawn along the window edges, so every pane is framed on all
+four sides; the outer border takes one row or column from the panes on each
+edge.
+With
+.Ic all ,
+every pane has its own frame and neighbouring frames are separated by a one
+cell gap, so the active pane's frame is highlighted on all sides; this takes
+two cells between neighbours instead of one.
+Where
+.Ic pane\-border\-status
+is set, the status line serves as the frame on its side.
+.Pp
 .It Xo Ic pane\-border\-status
 .Op Ic off | top | bottom | top\-floating | bottom\-floating
 .Xc

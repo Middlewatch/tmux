@@ -732,7 +732,14 @@ redraw_mark_pane_borders(struct redraw_build_ctx *bctx, struct window_pane *wp,
 	} else {
 		mark_right = (right <= (int)bctx->w->sx);
 		mark_bottom = (bottom <= (int)bctx->w->sy);
-		if (pane_status == PANE_STATUS_TOP && bottom < (int)bctx->w->sy)
+		/*
+		 * With a shared border the neighbour's status line takes the
+		 * row; with pane-border-frame all each pane has its own rows.
+		 */
+		if (window_get_pane_frame(bctx->w) == PANE_FRAME_ALL)
+			;
+		else if (pane_status == PANE_STATUS_TOP &&
+		    bottom < (int)bctx->w->sy)
 			mark_bottom = 0;
 		else if (pane_status == PANE_STATUS_BOTTOM)
 			mark_top = 0;
