@@ -1,0 +1,402 @@
+#!/bin/sh
+# tmuxlab: drive the fork's tmux binary inside a capturing outer tmux.
+#
+# An inner tmux (the binary under test) runs attached inside one pane of an
+# outer tmux, so the inner client's rendering can be captured as text and
+# mouse events can be injected as SGR escape sequences. Each lab is isolated
+# by socket name, so it never touches the user's own tmux server.
+#
+# Usage: tmuxlab <command> [args]   (see "tmuxlab help")
+
+set -u
+
+LAB=${TMUXLAB:-lab}
+SKILL=$(cd "$(dirname "$0")/.." && pwd)
+REPO=$(cd "$SKILL/../../.." && pwd)
+BIN=${TEST_TMUX:-$REPO/tmux}
+OUTER_BIN=${TMUXLAB_OUTER_TMUX:-$BIN}
+STATE=${TMUXLAB_DIR:-${TMPDIR:-/tmp}/tmuxlab-$(id -u)/$LAB}
+EVIDENCE=${TMUXLAB_EVIDENCE:-$REPO/.local/verify}
+DELAY=${TMUXLAB_DELAY:-0.05}
+# TERM the inner client sees. xterm-256color has ech/el/el1 like foot and
+# most GUI terminals; tmux-256color lacks ech, which inflates redraw bytes.
+OUTER_TERM=${TMUXLAB_TERM:-xterm-256color}
+
+INNER_SOCK="tmuxlab-$LAB-in"
+OUTER_SOCK="tmuxlab-$LAB-out"
+OUTER_SESSION=out
+
+inner() { "$BIN" -L "$INNER_SOCK" "$@"; }
+outer() { "$OUTER_BIN" -L "$OUTER_SOCK" "$@"; }
+
+die() { echo "tmuxlab: $*" >&2; exit 1; }
+
+usage() {
+	cat <<EOF
+usage: tmuxlab <command> [args]
+
+  up [-x W] [-y H] [-f CONF] [-c CMD] [-v]
+                     start an outer tmux (W x H, default 120x40) with the
+                     inner tmux attached inside it. -f sources CONF after
+                     the lab defaults (e.g. ~/.config/tmux/tmux.conf),
+                     -c sets the inner default-command (default: labpane),
+                     -v starts the inner server with -vv debug logging.
+  doctor             read-only health check of the lab (exit 1 if unfit)
+  cmd ARGS...        run a tmux command on the inner server
+  keys ARGS...       send-keys arguments delivered to the inner client
+  mouse EV X Y [-b N]
+                     inject one SGR mouse event at window cell X,Y (0-based,
+                     the coordinates list-panes reports). EV is press,
+                     release, drag, move, click, wheelup or wheeldown.
+                     -b picks the button (0 left, 1 middle, 2 right).
+  drag X1 Y1 X2 Y2 [STEPS]
+                     press at X1,Y1, STEPS drag updates (default 4) along
+                     the line, release at X2,Y2
+  where X Y          move the pointer to X,Y and report what the inner
+                     server says it hit (needs "up -v")
+  screen [-e]        capture the rendered inner client (-e keeps SGR)
+  map                cell map of the render: box-drawing kept, '#' for a
+                     cell with a non-default background, '.' other text
+  geom               window size, status layout, pane rectangles, layout
+  log [N]            last N lines (default 40) of the inner server log
+  bytes start|read|stop
+                     record bytes the inner client writes to its terminal
+  proof NAME         save screen, map and geom under $EVIDENCE/<stamp>-NAME
+  down               kill both servers and remove the lab state directory
+  help               this text
+
+Environment: TMUXLAB (lab name, default lab), TEST_TMUX (binary under test,
+default $REPO/tmux), TMUXLAB_TERM (TERM the inner client sees, default
+xterm-256color), TMUXLAB_DIR, TMUXLAB_EVIDENCE, TMUXLAB_DELAY (seconds
+between injected mouse events, default 0.05).
+EOF
+}
+
+# ---------------------------------------------------------------- helpers
+
+require_up() {
+	[ -d "$STATE" ] || die "lab '$LAB' is not up (run: tmuxlab up)"
+	outer has-session -t "$OUTER_SESSION" 2>/dev/null ||
+	    die "outer server for lab '$LAB' is not running"
+	inner display -p '' >/dev/null 2>&1 ||
+	    die "inner server for lab '$LAB' is not answering"
+}
+
+# Rows of status line above the window in the inner client.
+status_top_lines() {
+	pos=$(inner show -gv status-position 2>/dev/null)
+	[ "$pos" = top ] || { echo 0; return; }
+	st=$(inner show -gv status 2>/dev/null)
+	case "$st" in
+	off) echo 0 ;;
+	on) echo 1 ;;
+	*) echo "$st" ;;
+	esac
+}
+
+# Emit one SGR mouse sequence to the inner client. $1 button code, $2 x,
+# $3 y (0-based window cells), $4 final char (M press/drag, m release).
+sgr() {
+	off=$(status_top_lines)
+	seq=$(printf '\033[<%d;%d;%d%s' "$1" $(($2 + 1)) $(($3 + off + 1)) "$4")
+	outer send-keys -t "$OUTER_SESSION" -l "$seq"
+	sleep "$DELAY"
+}
+
+mouse_event() {
+	ev=$1; x=$2; y=$3; shift 3
+	b=0
+	while [ $# -gt 0 ]; do
+		case "$1" in
+		-b) b=$2; shift 2 ;;
+		*) die "mouse: unknown argument $1" ;;
+		esac
+	done
+	case "$ev" in
+	press) sgr "$b" "$x" "$y" M ;;
+	release) sgr "$b" "$x" "$y" m ;;
+	drag) sgr $((b + 32)) "$x" "$y" M ;;
+	move) sgr 35 "$x" "$y" M ;;
+	click) sgr "$b" "$x" "$y" M; sgr "$b" "$x" "$y" m ;;
+	wheelup) sgr 64 "$x" "$y" M ;;
+	wheeldown) sgr 65 "$x" "$y" M ;;
+	*) die "mouse: unknown event $ev" ;;
+	esac
+}
+
+capture() {
+	outer capture-pane -p -t "$OUTER_SESSION" "$@"
+}
+
+# Classify each rendered cell from a capture with SGR sequences.
+cell_map() {
+	LC_ALL=C.UTF-8 awk '
+	function bgreset() { bg = 0 }
+	function sgr(params,	n, p, i, k) {
+		n = split(params, p, ";")
+		if (n == 0 || params == "") { bgreset(); return }
+		for (i = 1; i <= n; i++) {
+			k = p[i] + 0
+			if (k == 0) bgreset()
+			else if (k == 49) bgreset()
+			else if ((k >= 40 && k <= 47) || (k >= 100 && k <= 107)) bg = 1
+			else if (k == 48) {
+				bg = 1
+				if (p[i + 1] == "5") i += 2
+				else if (p[i + 1] == "2") i += 4
+			}
+		}
+	}
+	{
+		bgreset(); out = ""
+		n = split($0, ch, "")
+		i = 1
+		while (i <= n) {
+			c = ch[i]
+			if (c == "\033" && ch[i + 1] == "[") {
+				j = i + 2; params = ""
+				while (j <= n && ch[j] !~ /[a-zA-Z]/) { params = params ch[j]; j++ }
+				if (ch[j] == "m") sgr(params)
+				i = j + 1
+				continue
+			}
+			if (c ~ /^[─━│┃┌┏┐┓└┗┘┛├┣┤┫┬┳┴┻┼╋╭╮╯╰═║╔╗╚╝╠╣╦╩╬]$/) out = out c
+			else if (c == " ") out = out (bg ? "#" : " ")
+			else out = out "."
+			i++
+		}
+		print out
+	}'
+}
+
+ruler() {
+	w=$1
+	LC_ALL=C awk -v w="$w" 'BEGIN {
+		t = ""; u = ""
+		for (i = 0; i < w; i++) {
+			t = t (i % 10 == 0 ? substr(int(i / 10) % 10, 1, 1) : " ")
+			u = u (i % 10)
+		}
+		print "    " t; print "    " u
+	}'
+}
+
+# ---------------------------------------------------------------- commands
+
+cmd_up() {
+	w=120; h=40; conf=""; cmd=""; verbose=""
+	while [ $# -gt 0 ]; do
+		case "$1" in
+		-x) w=$2; shift 2 ;;
+		-y) h=$2; shift 2 ;;
+		-f) conf=$2; shift 2 ;;
+		-c) cmd=$2; shift 2 ;;
+		-v) verbose="-vv"; shift ;;
+		*) die "up: unknown argument $1" ;;
+		esac
+	done
+	[ -x "$BIN" ] || die "binary under test not found: $BIN (run make)"
+	[ -z "$conf" ] || [ -r "$conf" ] || die "config not readable: $conf"
+
+	outer kill-server 2>/dev/null
+	inner kill-server 2>/dev/null
+	rm -rf "$STATE"
+	mkdir -p "$STATE" || die "cannot create $STATE"
+
+	{
+		echo "# generated by tmuxlab up"
+		[ -z "$conf" ] || echo "source-file $conf"
+		if [ -n "$cmd" ]; then
+			echo "set -g default-command \"$cmd\""
+		else
+			echo "set -g default-command \"$SKILL/bin/labpane\""
+		fi
+		echo "set -g mouse on"
+		echo "set -g exit-empty off"
+	} >"$STATE/tmux.conf"
+	printf '%s\n' "$w" "$h" >"$STATE/size"
+	{
+		echo "# generated by tmuxlab up (outer, capturing tmux)"
+		echo "set -g default-terminal $OUTER_TERM"
+		echo "set -g status off"
+		echo "set -g window-size manual"
+		echo "set -g exit-empty off"
+	} >"$STATE/outer.conf"
+
+	outer -f "$STATE/outer.conf" new-session -d -s "$OUTER_SESSION" -x "$w" -y "$h" \
+	    "cd '$STATE' && exec '$BIN' -L '$INNER_SOCK' $verbose -f '$STATE/tmux.conf' new-session -s lab" ||
+	    die "could not start outer server"
+	outer resize-window -t "$OUTER_SESSION" -x "$w" -y "$h"
+
+	i=0
+	while [ "$i" -lt 50 ]; do
+		if inner display -p '#{client_width}' >/dev/null 2>&1; then
+			break
+		fi
+		sleep 0.1
+		i=$((i + 1))
+	done
+	[ "$i" -lt 50 ] || die "inner server did not come up; see $STATE"
+	# One more tick so the client finishes attaching and the first draw lands.
+	sleep 0.3
+	echo "lab '$LAB' up: $(inner display -p '#{client_width}x#{client_height}') client, state $STATE"
+}
+
+cmd_doctor() {
+	rc=0
+	note() { echo "  $*"; }
+	bad() { echo "  FAIL: $*"; rc=1; }
+
+	echo "tmuxlab doctor (lab '$LAB')"
+	if [ -x "$BIN" ]; then
+		note "binary: $BIN ($("$BIN" -V))"
+	else
+		bad "binary missing: $BIN"
+	fi
+	if [ -d "$STATE" ]; then
+		note "state: $STATE"
+	else
+		bad "lab not started (no $STATE)"
+		exit 1
+	fi
+	if outer has-session -t "$OUTER_SESSION" 2>/dev/null; then
+		note "outer: $(outer display -p -t "$OUTER_SESSION" '#{pane_width}x#{pane_height} pane, pid #{pid}')"
+	else
+		bad "outer server down"
+	fi
+	if v=$(inner display -p '#{version}' 2>/dev/null); then
+		[ "$v" = "$("$BIN" -V | sed 's/^tmux //')" ] ||
+		    bad "inner server version $v does not match $BIN"
+		note "inner: version $v, pid $(inner display -p '#{pid}')"
+		n=$(inner list-clients 2>/dev/null | wc -l)
+		[ "$n" -eq 1 ] || bad "expected 1 inner client, found $n"
+		note "inner client: $(inner display -p '#{client_width}x#{client_height} #{client_termname}')"
+		note "mouse option: $(inner show -gv mouse)"
+		note "frame: $(inner show -gwv pane-border-frame 2>/dev/null || echo unsupported), lines: $(inner show -gwv pane-border-lines)"
+	else
+		bad "inner server down"
+	fi
+	[ "$rc" -eq 0 ] && echo "  ok"
+	exit "$rc"
+}
+
+cmd_where() {
+	require_up
+	[ $# -eq 2 ] || die "usage: tmuxlab where X Y"
+	log=$(ls -t "$STATE"/tmux-server-*.log 2>/dev/null | head -1)
+	[ -n "$log" ] || die "no inner server log; start the lab with: tmuxlab up -v"
+	before=$(wc -l <"$log")
+	mouse_event move "$1" "$2"
+	sleep 0.2
+	tail -n +"$((before + 1))" "$log" |
+	    grep -E 'move at|on pane|on empty|on border|border$|mouse window' |
+	    sed 's/^/  /'
+}
+
+cmd_map() {
+	require_up
+	w=$(outer display -p -t "$OUTER_SESSION" '#{pane_width}')
+	ruler "$w"
+	capture -e -N | cell_map | awk '{ printf "%3d %s\n", NR - 1, $0 }'
+}
+
+cmd_geom() {
+	require_up
+	echo "window: $(inner display -p '#{window_width}x#{window_height}') client: $(inner display -p '#{client_width}x#{client_height}')"
+	echo "status: $(inner show -gv status) at $(inner show -gv status-position) (window row 0 is client row $(status_top_lines))"
+	echo "options: pane-border-frame=$(inner show -gwv pane-border-frame 2>/dev/null) pane-border-lines=$(inner show -gwv pane-border-lines) pane-border-status=$(inner show -gwv pane-border-status)"
+	echo "layout: $(inner display -p '#{window_layout}')"
+	inner list-panes -F '#{pane_id} x=#{pane_left} y=#{pane_top} w=#{pane_width} h=#{pane_height} right=#{pane_right} bottom=#{pane_bottom}#{?pane_active, active,}'
+}
+
+cmd_bytes() {
+	require_up
+	f="$STATE/bytes.log"
+	case "${1:-}" in
+	start)
+		: >"$f"
+		outer pipe-pane -t "$OUTER_SESSION" -O "cat >> '$f'"
+		echo "recording to $f"
+		;;
+	read)
+		[ -f "$f" ] || die "not recording (tmuxlab bytes start)"
+		wc -c <"$f"
+		: >"$f"
+		;;
+	stop)
+		outer pipe-pane -t "$OUTER_SESSION"
+		[ -f "$f" ] && wc -c <"$f"
+		;;
+	*) die "usage: tmuxlab bytes start|read|stop" ;;
+	esac
+}
+
+cmd_proof() {
+	require_up
+	[ $# -eq 1 ] || die "usage: tmuxlab proof NAME"
+	dir="$EVIDENCE/$(date +%Y%m%d-%H%M%S)-$1"
+	mkdir -p "$dir" || die "cannot create $dir"
+	capture >"$dir/screen.txt"
+	capture -e >"$dir/screen.ansi"
+	cmd_map >"$dir/map.txt"
+	cmd_geom >"$dir/geom.txt"
+	{
+		echo "binary: $BIN ($("$BIN" -V))"
+		echo "lab: $LAB"
+		echo "date: $(date -Is)"
+		echo "config: $(cat "$STATE/tmux.conf" | tr '\n' ';')"
+	} >"$dir/about.txt"
+	echo "$dir"
+}
+
+cmd_down() {
+	outer kill-server 2>/dev/null
+	inner kill-server 2>/dev/null
+	rm -f "/tmp/tmux-$(id -u)/$INNER_SOCK" "/tmp/tmux-$(id -u)/$OUTER_SOCK"
+	rm -rf "$STATE"
+	echo "lab '$LAB' down"
+}
+
+# ---------------------------------------------------------------- dispatch
+
+[ $# -gt 0 ] || { usage; exit 1; }
+command=$1; shift
+case "$command" in
+up) cmd_up "$@" ;;
+doctor) cmd_doctor ;;
+cmd) require_up; inner "$@" ;;
+keys) require_up; outer send-keys -t "$OUTER_SESSION" "$@" ;;
+mouse)
+	require_up
+	[ $# -ge 3 ] || die "usage: tmuxlab mouse EV X Y [-b N]"
+	mouse_event "$@"
+	;;
+drag)
+	require_up
+	[ $# -ge 4 ] || die "usage: tmuxlab drag X1 Y1 X2 Y2 [STEPS]"
+	x1=$1; y1=$2; x2=$3; y2=$4; steps=${5:-4}
+	sgr 0 "$x1" "$y1" M
+	i=1
+	while [ "$i" -le "$steps" ]; do
+		sgr 32 $((x1 + (x2 - x1) * i / steps)) $((y1 + (y2 - y1) * i / steps)) M
+		i=$((i + 1))
+	done
+	sgr 0 "$x2" "$y2" m
+	sleep 0.2
+	;;
+where) cmd_where "$@" ;;
+screen) require_up; capture "$@" ;;
+map) cmd_map ;;
+geom) cmd_geom ;;
+log)
+	[ -d "$STATE" ] || die "lab not up"
+	log=$(ls -t "$STATE"/tmux-server-*.log 2>/dev/null | head -1)
+	[ -n "$log" ] || die "no inner server log; start with: tmuxlab up -v"
+	tail -n "${1:-40}" "$log"
+	;;
+bytes) cmd_bytes "$@" ;;
+proof) cmd_proof "$@" ;;
+down) cmd_down ;;
+help|-h|--help) usage ;;
+*) die "unknown command: $command (try: tmuxlab help)" ;;
+esac

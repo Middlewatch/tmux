@@ -1,0 +1,6 @@
+#!/bin/sh
+# Default command for panes in a tmuxlab inner tmux: print the pane id on
+# the first line so a capture identifies the pane, then echo whatever is
+# typed (cat on a tty echoes lines) so send-keys leaves visible evidence.
+printf '%s\n' "${TMUX_PANE:-?}"
+exec cat

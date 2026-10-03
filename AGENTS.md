@@ -32,12 +32,22 @@ schedule.
   same trick is the quickest way to eyeball a border or layout change
   without a terminal.
 - Generated files (`configure`, `Makefile.in`, logs) are gitignored; keep
-  build logs out of the tree.
+  build logs out of the tree. `.local/` is the unversioned surround;
+  verification evidence lands in `.local/verify/`.
+- `.agents/skills/verify-tmux/` is the lab for eyeballing and proving
+  behaviour without a terminal: `bin/tmuxlab up -v -f
+  ~/.config/tmux/tmux.conf` starts the fork binary inside a capturing
+  tmux, then `cmd`, `mouse`, `drag`, `where`, `map`, `geom`, `bytes` and
+  `proof` drive and record it. Read its `SKILL.md` and `features/`
+  before working on layout, borders or mouse behaviour.
 
 ## Local patches
 
 - `pane-border-frame off|outer|all`: `outer` adds borders along the window
-  edge so every pane is framed; `all` gives each pane its own frame with a
-  one-cell gap between neighbours, so the active frame highlights on all
-  sides (`outer-border` branch). Known rough edges are listed in the
-  commit message.
+  edge so every pane is framed; `all` gives each pane its own frame so the
+  active frame highlights on all sides (`outer-border` branch). Side by
+  side, frames are separated by one gap column drawn as a blank in
+  `pane-border-style`; stacked frames sit on adjacent rows with no gap, so
+  the spacing looks the same both ways on a 2:1 cell font. Every cell
+  between two panes (frame, gap, frame) is a mouse drag handle. Known
+  rough edges are listed in the commit messages.
