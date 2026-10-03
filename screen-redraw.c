@@ -1366,7 +1366,17 @@ redraw_draw_border_span(struct redraw_draw_ctx *dctx,
 		redraw_get_default_border_style(dctx, &gc, &pane_lines);
 		if (span->data.type == REDRAW_SPAN_OUTSIDE)
 			window_get_fill_cell(w, 0, &gc);
-		else if (span->data.type == REDRAW_SPAN_EMPTY)
+		else if (span->data.type == REDRAW_SPAN_EMPTY &&
+		    window_get_pane_frame(w) == PANE_FRAME_ALL) {
+			/*
+			 * With pane-border-frame all, empty cells are the gap
+			 * between two frames, so they are part of the border
+			 * and drawn as a blank in pane-border-style rather
+			 * than as unused window with fill-character.
+			 */
+			utf8_set(&gc.data, ' ');
+			gc.attr &= ~GRID_ATTR_CHARSET;
+		} else if (span->data.type == REDRAW_SPAN_EMPTY)
 			window_get_fill_cell(w, 1, &gc);
 		else {
 			if (span->data.type != REDRAW_SPAN_BORDER)

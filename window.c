@@ -868,10 +868,17 @@ struct window_pane *
 window_get_active_at(struct window *w, u_int x, u_int y)
 {
 	struct window_pane	*wp;
-	int			 pane_status, xoff, yoff;
+	int			 pane_status, xoff, yoff, frame_all;
 	u_int			 sx, sy;
 
 	pane_status = window_get_pane_status(w);
+
+	/*
+	 * With pane-border-frame all, a tiled pane owns its own left and top
+	 * frame and the gap column before its left frame, so the mouse can
+	 * grab any of the cells between two panes.
+	 */
+	frame_all = (window_get_pane_frame(w) == PANE_FRAME_ALL);
 
 	if (w->modal != NULL) {
 		if (window_pane_contains(w->modal, x, y))
@@ -917,9 +924,12 @@ window_get_active_at(struct window *w, u_int x, u_int y)
 			 * Tiled - to and including the right border, excluding
 			 * the bottom border.
 			 */
-			if ((int)x < xoff || x > xoff + sx)
+			if (frame_all) {
+				if ((int)x < xoff - 2 || x > xoff + sx)
+					continue;
+			} else if ((int)x < xoff || x > xoff + sx)
 				continue;
-			if (pane_status == PANE_STATUS_TOP) {
+			if (frame_all || pane_status == PANE_STATUS_TOP) {
 				if ((int)y < yoff - 1 || y > yoff + sy)
 					continue;
 			} else {
