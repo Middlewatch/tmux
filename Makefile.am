@@ -156,7 +156,6 @@ dist_tmux_SOURCES = \
 	cmd-swap-window.c \
 	cmd-switch-client.c \
 	cmd-unbind-key.c \
-	cmd-wait-for.c \
 	cmd.c \
 	colour.c \
 	compat.h \

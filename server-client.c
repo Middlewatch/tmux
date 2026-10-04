@@ -376,7 +376,6 @@ server_client_lost(struct client *c)
 	TAILQ_REMOVE(&clients, c, entry);
 	log_debug("lost client %p", c);
 
-	cmd_wait_for_client_lost(c);
 	cmdq_next(c);
 
 	if (c->flags & CLIENT_ATTACHED) {

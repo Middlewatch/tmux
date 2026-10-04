@@ -296,10 +296,9 @@ server_loop(void)
 	}
 
 	/*
-	 * No attached clients therefore want to exit - flush any waiting
-	 * clients but don't actually exit until they've gone.
+	 * No attached clients therefore want to exit, but don't actually exit
+	 * until any remaining clients have gone.
 	 */
-	cmd_wait_for_flush();
 	if (!TAILQ_EMPTY(&clients))
 		return (0);
 
@@ -315,8 +314,6 @@ server_send_exit(void)
 {
 	struct client	*c, *c1;
 	struct session	*s, *s1;
-
-	cmd_wait_for_flush();
 
 	TAILQ_FOREACH_SAFE(c, &clients, entry, c1) {
 		if (c->flags & CLIENT_SUSPENDED)
