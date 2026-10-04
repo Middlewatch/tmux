@@ -875,6 +875,15 @@ have_event:
 	m->wp = -1;
 	m->ignore = ignore;
 
+	/*
+	 * Default the pane-relative position to the event cell. It is only
+	 * recomputed in the KEYC_MOUSE_LOCATION_NOWHERE branch below, but a
+	 * drag starting on the status line or a scrollbar reads px and py when
+	 * storing the drag origin without entering that branch.
+	 */
+	px = x;
+	py = y;
+
 	/* Is this on the status line? */
 	m->statusat = status_at_line(c);
 	m->statuslines = status_line_size(c);
