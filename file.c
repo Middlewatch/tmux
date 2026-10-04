@@ -718,7 +718,6 @@ file_read_error_callback(__unused struct bufferevent *bev, short what,
 
 	bufferevent_free(cf->event);
 	close(cf->fd);
-	RB_REMOVE(client_files, cf->tree, cf);
 	file_free(cf);
 }
 
