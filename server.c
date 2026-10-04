@@ -252,8 +252,6 @@ server_start(struct tmuxproc *client, uint64_t flags, struct event_base *base,
 	evtimer_set(&server_ev_tidy, server_tidy_event, NULL);
 	evtimer_add(&server_ev_tidy, &tv);
 
-	server_acl_init();
-
 	server_add_accept(0);
 	proc_loop(server_proc, server_loop);
 
@@ -395,11 +393,6 @@ server_accept(int fd, short events, __unused void *data)
 		return;
 	}
 	c = server_client_create(newfd);
-	if (!server_acl_join(c)) {
-		c->exit_message = xstrdup("access not allowed");
-		c->retval = 1;
-		c->flags |= CLIENT_EXIT;
-	}
 }
 
 /*

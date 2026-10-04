@@ -4223,18 +4223,6 @@ char		*sixel_print(struct sixel_image *, struct sixel_image *,
 struct screen	*sixel_to_screen(struct sixel_image *);
 #endif
 
-/* server-acl.c */
-#define SERVER_ACL_READONLY 0x1
-#define SERVER_ACL_IS_GROUP 0x2
-void			 server_acl_init(void);
-int			 server_acl_find(id_t, int);
-void 			 server_acl_display(struct cmdq_item *);
-void			 server_acl_allow(id_t, int);
-void			 server_acl_deny(id_t, int);
-void			 server_acl_allow_write(id_t, int);
-void			 server_acl_deny_write(id_t, int);
-int			 server_acl_join(struct client *);
-
 /* hyperlink.c */
 u_int	 		 hyperlinks_put(struct hyperlinks *, const char *,
 			     const char *);
