@@ -3209,8 +3209,6 @@ void printflike(2, 3) cmdq_print(struct cmdq_item *, const char *, ...);
 void 		 cmdq_print_data(struct cmdq_item *, struct evbuffer *);
 void printflike(2, 3) cmdq_error(struct cmdq_item *, const char *, ...);
 
-/* cmd-wait-for.c */
-
 /* client.c */
 int	client_main(struct event_base *, int, char **, uint64_t, int);
 
