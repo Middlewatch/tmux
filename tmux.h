@@ -3744,7 +3744,7 @@ int		 window_pane_set_mode(struct window_pane *,
 		     struct window_pane *, const struct window_mode *,
 		     struct cmdq_item *, struct cmd_find_state *, struct args *);
 int		 window_pane_reset_mode(struct window_pane *);
-void		 window_pane_reset_mode_all(struct window_pane *);
+int		 window_pane_reset_mode_all(struct window_pane *);
 int		 window_pane_key(struct window_pane *, struct client *,
 		     struct session *, struct winlink *, key_code,
 		     struct mouse_event *);

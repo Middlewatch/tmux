@@ -1760,6 +1760,12 @@ window_pane_resize(struct window_pane *wp, u_int sx, u_int sy)
 	events_fire("pane-resized", ep);
 }
 
+/*
+ * Enter a mode. Returns 0 if the mode was entered, 1 if the pane was already
+ * in it or the mode failed to initialise, and -1 if leaving a NO_STACK mode
+ * that was entered with -k killed and freed the pane, in which case the caller
+ * must not touch wp again.
+ */
 int
 window_pane_set_mode(struct window_pane *wp, struct window_pane *swp,
     const struct window_mode *mode, struct cmdq_item *item,
@@ -1772,8 +1778,10 @@ window_pane_set_mode(struct window_pane *wp, struct window_pane *swp,
 	if (!TAILQ_EMPTY(&wp->modes)) {
 		if (TAILQ_FIRST(&wp->modes)->mode == mode)
 			return (1);
-		if (TAILQ_FIRST(&wp->modes)->mode->flags & WINDOW_MODE_NO_STACK)
-			window_pane_reset_mode(wp);
+		if (TAILQ_FIRST(&wp->modes)->mode->flags & WINDOW_MODE_NO_STACK) {
+			if (window_pane_reset_mode(wp))
+				return (-1);
+		}
 	}
 	if (!TAILQ_EMPTY(&wp->modes))
 		oname = TAILQ_FIRST(&wp->modes)->mode->name;
@@ -1866,18 +1874,18 @@ window_pane_reset_mode(struct window_pane *wp)
 	return (0);
 }
 
-/* Reset all modes. */
-void
+/*
+ * Reset all modes. Returns 1 if a mode's -k flag killed and freed the pane, in
+ * which case the caller must not touch wp again; 0 otherwise.
+ */
+int
 window_pane_reset_mode_all(struct window_pane *wp)
 {
-	/*
-	 * window_pane_reset_mode may kill and free wp (mode -k flag); stop
-	 * before re-reading wp in that case.
-	 */
 	while (!TAILQ_EMPTY(&wp->modes)) {
 		if (window_pane_reset_mode(wp))
-			break;
+			return (1);
 	}
+	return (0);
 }
 
 /* Prompt input callback. */

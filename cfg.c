@@ -295,11 +295,13 @@ cfg_show_causes(struct session *s)
 	wp = s->curw->window->active;
 
 	wme = TAILQ_FIRST(&wp->modes);
-	if (wme == NULL || wme->mode != &window_view_mode)
-		window_pane_set_mode(wp, NULL, &window_view_mode, NULL, NULL,
-		    NULL);
+	if ((wme == NULL || wme->mode != &window_view_mode) &&
+	    window_pane_set_mode(wp, NULL, &window_view_mode, NULL, NULL,
+	    NULL) == -1)
+		wp = NULL;
 	for (i = 0; i < cfg_ncauses; i++) {
-		window_copy_add(wp, 0, "%s", cfg_causes[i]);
+		if (wp != NULL)
+			window_copy_add(wp, 0, "%s", cfg_causes[i]);
 		free(cfg_causes[i]);
 	}
 

@@ -325,7 +325,11 @@ spawn_pane(struct spawn_context *sc, char **cause)
 			close(sc->wp0->fd);
 			sc->wp0->fd = -1;
 		}
-		window_pane_reset_mode_all(sc->wp0);
+		if (window_pane_reset_mode_all(sc->wp0)) {
+			xasprintf(cause, "pane killed on leaving its mode");
+			free(cwd);
+			return (NULL);
+		}
 		screen_reinit(&sc->wp0->base, 0);
 		if (sc->wp0->ictx != NULL) {
 			input_free(sc->wp0->ictx);

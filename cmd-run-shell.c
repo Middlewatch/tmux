@@ -99,9 +99,10 @@ cmd_run_shell_print(struct job *job, const char *msg)
 	}
 
 	wme = TAILQ_FIRST(&wp->modes);
-	if (wme == NULL || wme->mode != &window_view_mode)
-		window_pane_set_mode(wp, NULL, &window_view_mode, NULL, NULL,
-		    NULL);
+	if ((wme == NULL || wme->mode != &window_view_mode) &&
+	    window_pane_set_mode(wp, NULL, &window_view_mode, NULL, NULL,
+	    NULL) == -1)
+		return;
 	window_copy_add(wp, 1, "%s", msg);
 }
 
