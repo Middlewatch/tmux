@@ -223,7 +223,6 @@ dist_tmux_SOURCES = \
 	window-client.c \
 	window-clock.c \
 	window-copy.c \
-	window-customize.c \
 	window-panes.c \
 	window-switch.c \
 	window-tree.c \
