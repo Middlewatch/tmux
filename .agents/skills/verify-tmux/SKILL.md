@@ -61,6 +61,10 @@ script adds the status line offset when the inner status is at the top.
 - `bin/tmuxlab cmd <tmux command>`: any command on the inner server, e.g.
   `cmd split-window -h`, `cmd set -g pane-border-frame outer`,
   `cmd select-layout tiled`, `cmd list-panes -F '#{pane_id} #{pane_left}'`.
+  It runs without a client, so a command that defaults to "the current
+  session" picks the most recently active one, which after `new-session -d`
+  is the new session rather than the attached `lab`; pass `-t` when more
+  than one session exists.
 - `bin/tmuxlab keys <send-keys args>`: keystrokes to the inner client.
 - `bin/tmuxlab mouse press|release|drag|move|click|wheelup|wheeldown X Y [-b N]`:
   one SGR mouse event at cell X,Y.
