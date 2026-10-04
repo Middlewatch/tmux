@@ -35,9 +35,6 @@
 static const char *options_table_mode_keys_list[] = {
 	"emacs", "vi", NULL
 };
-static const char *options_table_clock_mode_style_list[] = {
-	"12", "24", "12-with-seconds", "24-with-seconds", NULL
-};
 static const char *options_table_status_list[] = {
 	"off", "on", "2", "3", "4", "5", NULL
 };
@@ -281,7 +278,6 @@ static const char *options_table_status_format_default[] = {
 const struct options_name_map options_other_names[] = {
 	{ "display-panes-color", "display-panes-colour" },
 	{ "display-panes-active-color", "display-panes-active-colour" },
-	{ "clock-mode-color", "clock-mode-colour" },
 	{ "cursor-color", "cursor-colour" },
 	{ "prompt-cursor-color", "prompt-cursor-colour" },
 	{ "prompt-command-cursor-color", "prompt-command-cursor-colour" },
@@ -1317,22 +1313,6 @@ const struct options_table_entry options_table[] = {
 	  .default_str = "#{?pane_in_mode,[tmux],#{pane_current_command}}"
 			 "#{?pane_dead,[dead],}",
 	  .text = "Format used to automatically rename windows."
-	},
-
-	{ .name = "clock-mode-colour",
-	  .type = OPTIONS_TABLE_STRING,
-	  .scope = OPTIONS_TABLE_WINDOW,
-	  .flags = OPTIONS_TABLE_IS_COLOUR,
-	  .default_str = "themeblue",
-	  .text = "Colour of the clock in clock mode."
-	},
-
-	{ .name = "clock-mode-style",
-	  .type = OPTIONS_TABLE_CHOICE,
-	  .scope = OPTIONS_TABLE_WINDOW,
-	  .choices = options_table_clock_mode_style_list,
-	  .default_num = 1,
-	  .text = "Time format of the clock in clock mode."
 	},
 
 	{ .name = "display-panes-active-colour",

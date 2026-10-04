@@ -40,19 +40,6 @@ const struct cmd_entry cmd_copy_mode_entry = {
 	.exec = cmd_copy_mode_exec
 };
 
-const struct cmd_entry cmd_clock_mode_entry = {
-	.name = "clock-mode",
-	.alias = NULL,
-
-	.args = { "t:", 0, 0, NULL },
-	.usage = CMD_TARGET_PANE_USAGE,
-
-	.target = { 't', CMD_FIND_PANE, 0 },
-
-	.flags = CMD_AFTERHOOK,
-	.exec = cmd_copy_mode_exec
-};
-
 static enum cmd_retval
 cmd_copy_mode_exec(struct cmd *self, struct cmdq_item *item)
 {
@@ -78,11 +65,6 @@ cmd_copy_mode_exec(struct cmd *self, struct cmdq_item *item)
 			return (CMD_RETURN_NORMAL);
 	}
 
-	if (cmd_get_entry(self) == &cmd_clock_mode_entry) {
-		window_pane_set_mode(wp, NULL, &window_clock_mode, item, NULL,
-		    NULL);
-		return (CMD_RETURN_NORMAL);
-	}
 
 	if (args_has(args, 's'))
 		swp = source->wp;

@@ -3971,8 +3971,6 @@ extern const struct window_mode window_tree_mode;
 extern const struct window_mode window_switch_mode;
 
 /* window-clock.c */
-extern const struct window_mode window_clock_mode;
-extern const char window_clock_table[14][5][5];
 
 /* window-panes.c */
 extern const struct window_mode window_panes_mode;

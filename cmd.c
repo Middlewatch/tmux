@@ -36,7 +36,6 @@ extern const struct cmd_entry cmd_choose_client_entry;
 extern const struct cmd_entry cmd_choose_tree_entry;
 extern const struct cmd_entry cmd_clear_history_entry;
 extern const struct cmd_entry cmd_clear_prompt_history_entry;
-extern const struct cmd_entry cmd_clock_mode_entry;
 extern const struct cmd_entry cmd_command_prompt_entry;
 extern const struct cmd_entry cmd_confirm_before_entry;
 extern const struct cmd_entry cmd_copy_mode_entry;
@@ -127,7 +126,6 @@ const struct cmd_entry *cmd_table[] = {
 	&cmd_choose_tree_entry,
 	&cmd_clear_history_entry,
 	&cmd_clear_prompt_history_entry,
-	&cmd_clock_mode_entry,
 	&cmd_command_prompt_entry,
 	&cmd_confirm_before_entry,
 	&cmd_copy_mode_entry,

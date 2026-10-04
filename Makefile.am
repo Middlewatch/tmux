@@ -219,7 +219,6 @@ dist_tmux_SOURCES = \
 	window-border.c \
 	window-buffer.c \
 	window-client.c \
-	window-clock.c \
 	window-copy.c \
 	window-panes.c \
 	window-switch.c \
