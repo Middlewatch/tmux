@@ -1824,7 +1824,12 @@ window_pane_set_mode(struct window_pane *wp, struct window_pane *swp,
 	return (0);
 }
 
-void
+/*
+ * Reset the topmost mode. Returns 1 if the mode's -k flag caused the pane to be
+ * killed and freed, in which case the caller must not touch wp again; 0
+ * otherwise.
+ */
+int
 window_pane_reset_mode(struct window_pane *wp)
 {
 	struct window_mode_entry	*wme, *next;
@@ -1833,7 +1838,7 @@ window_pane_reset_mode(struct window_pane *wp)
 	const char			*name, *p;
 
 	if (TAILQ_EMPTY(&wp->modes))
-		return;
+		return (0);
 
 	wme = TAILQ_FIRST(&wp->modes);
 	p = wme->mode->name;
@@ -1864,16 +1869,25 @@ window_pane_reset_mode(struct window_pane *wp)
 	window_fire_pane_mode_changed("pane-mode-exited", wp, p, name, 0);
 	window_fire_pane_mode_changed("pane-mode-changed", wp, p, name, 0);
 
-	if (kill)
+	if (kill) {
 		server_kill_pane(wp);
+		return (1);
+	}
+	return (0);
 }
 
 /* Reset all modes. */
 void
 window_pane_reset_mode_all(struct window_pane *wp)
 {
-	while (!TAILQ_EMPTY(&wp->modes))
-		window_pane_reset_mode(wp);
+	/*
+	 * window_pane_reset_mode may kill and free wp (mode -k flag); stop
+	 * before re-reading wp in that case.
+	 */
+	while (!TAILQ_EMPTY(&wp->modes)) {
+		if (window_pane_reset_mode(wp))
+			break;
+	}
 }
 
 /* Prompt input callback. */
