@@ -29,6 +29,15 @@
 
 #include "tmux.h"
 
+/*
+ * Cap interactive drag (pane resize) redraws to one per this many microseconds.
+ * A real mouse streams motion events faster than any display refreshes; without
+ * this each event forces a full window repaint in its own event-loop pass. The
+ * cap lets events that arrive within one interval coalesce into a single redraw
+ * via the existing drain-all-input-per-pass path. 16 ms is one 60 Hz frame.
+ */
+#define DRAG_REDRAW_INTERVAL 16000
+
 static void	server_client_free(int, short, void *);
 static void	server_client_check_pane_resize(struct window_pane *);
 static void	server_client_check_pane_buffer(struct window_pane *);
@@ -2387,7 +2396,7 @@ server_client_check_redraw(struct client *c)
 	struct window		*w = s->curw->window;
 	struct window_pane	*wp;
 	int			 needed, tflags, mode = tty->mode;
-	int			 damaged = !TAILQ_EMPTY(&w->damage);
+	int			 damaged = !TAILQ_EMPTY(&w->damage), throttle;
 	struct timeval		 tv = { .tv_usec = 1000 };
 	static struct event	 ev;
 	size_t			 n;
@@ -2418,9 +2427,31 @@ server_client_check_redraw(struct client *c)
 	if ((tty->flags & TTY_SYNCING) && n > tty->sync_offset)
 		n = tty->sync_offset;
 
+	/*
+	 * While dragging, throttle redraws to DRAG_REDRAW_INTERVAL. If the last
+	 * drag redraw was too recent, defer this one so intervening motion
+	 * events coalesce; arm the timer for the remaining time.
+	 */
+	throttle = 0;
+	if (c->tty.mouse_drag_flag != 0) {
+		struct timeval	now, diff;
+		long		elapsed;
+
+		gettimeofday(&now, NULL);
+		timersub(&now, &c->tty.mouse_drag_redraw, &diff);
+		elapsed = diff.tv_sec * 1000000 + diff.tv_usec;
+		if (diff.tv_sec == 0 && elapsed < DRAG_REDRAW_INTERVAL) {
+			throttle = 1;
+			tv.tv_usec = DRAG_REDRAW_INTERVAL - elapsed;
+		} else
+			c->tty.mouse_drag_redraw = now;
+	}
+
 	/* Defer until output drains, preserving damage in client flags. */
-	if (n != 0 || (tty->flags & TTY_BLOCK)) {
-		if (n != 0)
+	if (n != 0 || (tty->flags & TTY_BLOCK) || throttle) {
+		if (throttle)
+			log_debug("%s: redraw deferred (drag throttle)", c->name);
+		else if (n != 0)
 			log_debug("%s: redraw deferred (%zu left)", c->name, n);
 		else
 			log_debug("%s: redraw deferred (blocked)", c->name);

@@ -1851,6 +1851,7 @@ struct tty {
 	int		 mouse_drag_flag;
 	u_int		 mouse_drag_x;
 	u_int		 mouse_drag_y;
+	struct timeval	 mouse_drag_redraw;
 	int		 mouse_scrolling_flag;
 	int		 mouse_slider_mpos;
 	int              mouse_last_pane;
