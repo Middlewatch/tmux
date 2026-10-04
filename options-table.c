@@ -70,7 +70,7 @@ static const char *options_table_pane_status_list[] = {
 	"off", "top", "bottom", "top-floating", "bottom-floating", NULL
 };
 static const char *options_table_pane_frame_list[] = {
-	"off", "outer", "all", NULL
+	"off", "outer", NULL
 };
 static const char *options_table_pane_border_indicators_list[] = {
 	"off", "colour", "arrows", "both", NULL
@@ -1595,8 +1595,7 @@ const struct options_table_entry options_table[] = {
 	  .choices = options_table_pane_frame_list,
 	  .default_num = PANE_FRAME_OFF,
 	  .text = "Whether to frame panes: 'outer' adds borders along the window "
-		  "edges, 'all' gives every pane its own frame with a gap "
-		  "between neighbours."
+		  "edges so every pane is framed on all four sides."
 	},
 
 	{ .name = "pane-border-status",

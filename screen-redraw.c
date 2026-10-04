@@ -732,14 +732,7 @@ redraw_mark_pane_borders(struct redraw_build_ctx *bctx, struct window_pane *wp,
 	} else {
 		mark_right = (right <= (int)bctx->w->sx);
 		mark_bottom = (bottom <= (int)bctx->w->sy);
-		/*
-		 * With a shared border the neighbour's status line takes the
-		 * row; with pane-border-frame all each pane has its own rows.
-		 */
-		if (window_get_pane_frame(bctx->w) == PANE_FRAME_ALL)
-			;
-		else if (pane_status == PANE_STATUS_TOP &&
-		    bottom < (int)bctx->w->sy)
+		if (pane_status == PANE_STATUS_TOP && bottom < (int)bctx->w->sy)
 			mark_bottom = 0;
 		else if (pane_status == PANE_STATUS_BOTTOM)
 			mark_top = 0;
@@ -1366,17 +1359,7 @@ redraw_draw_border_span(struct redraw_draw_ctx *dctx,
 		redraw_get_default_border_style(dctx, &gc, &pane_lines);
 		if (span->data.type == REDRAW_SPAN_OUTSIDE)
 			window_get_fill_cell(w, 0, &gc);
-		else if (span->data.type == REDRAW_SPAN_EMPTY &&
-		    window_get_pane_frame(w) == PANE_FRAME_ALL) {
-			/*
-			 * With pane-border-frame all, empty cells are the gap
-			 * between two frames, so they are part of the border
-			 * and drawn as a blank in pane-border-style rather
-			 * than as unused window with fill-character.
-			 */
-			utf8_set(&gc.data, ' ');
-			gc.attr &= ~GRID_ATTR_CHARSET;
-		} else if (span->data.type == REDRAW_SPAN_EMPTY)
+		else if (span->data.type == REDRAW_SPAN_EMPTY)
 			window_get_fill_cell(w, 1, &gc);
 		else {
 			if (span->data.type != REDRAW_SPAN_BORDER)

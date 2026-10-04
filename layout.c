@@ -438,14 +438,10 @@ layout_cell_is_right(struct layout_cell *root, struct layout_cell *lc)
 
 /*
  * Work out how many cells (0 or 1) a cell gives up on each side for the
- * pane-border-frame option. With "outer", only sides along the window edge
- * are inset so panes there get a border; with "all", every side is inset so
- * each pane has its own frame. Side by side, two frames are separated by a
- * gap column (the layout divider); stacked, the lower frame sits on the
- * divider row with no gap, because a row is about twice the height of a
- * column and this keeps the visible spacing between frames about the same
- * both ways. A pane status line already takes the top or bottom row on its
- * side, so no extra row is needed there. Floating cells are never inset.
+ * pane-border-frame option: with "outer", sides along the window edge are
+ * inset so panes there get a border. A pane status line already takes the
+ * top or bottom row on its side, so no extra row is needed there. Floating
+ * cells are never inset.
  */
 void
 layout_pane_insets(struct window *w, struct layout_cell *root,
@@ -463,15 +459,10 @@ layout_pane_insets(struct window *w, struct layout_cell *root,
 
 	edge_top = layout_cell_is_top(root, lc);
 	edge_bottom = layout_cell_is_bottom(root, lc);
-	if (frame == PANE_FRAME_ALL) {
-		*left = *right = *bottom = 1;
-		*top = edge_top;
-	} else {
-		*left = layout_cell_is_left(root, lc);
-		*right = layout_cell_is_right(root, lc);
-		*top = edge_top;
-		*bottom = edge_bottom;
-	}
+	*left = layout_cell_is_left(root, lc);
+	*right = layout_cell_is_right(root, lc);
+	*top = edge_top;
+	*bottom = edge_bottom;
 	if (status == PANE_STATUS_TOP && edge_top)
 		*top = 0;
 	if (status == PANE_STATUS_BOTTOM && edge_bottom)

@@ -24,7 +24,7 @@ cd ~/projects/tmux && make            # binary under test is ./tmux
 bin/tmuxlab up -v -f ~/.config/tmux/tmux.conf -x 120 -y 40
 ```
 
-- `-f CONF` sources the user's config (frames, heavy lines, mouse on,
+- `-f CONF` sources the user's config (outer frame, single lines, mouse on,
   status at top). Without `-f` the inner runs bare defaults plus the lab
   settings; set `pane-border-frame` yourself in that case.
 - `-v` starts the inner server with debug logging. `where` and `log`
@@ -59,7 +59,7 @@ reports as `pane_left`, `pane_top`, `pane_right`, `pane_bottom`. The
 script adds the status line offset when the inner status is at the top.
 
 - `bin/tmuxlab cmd <tmux command>`: any command on the inner server, e.g.
-  `cmd split-window -h`, `cmd set -g pane-border-frame all`,
+  `cmd split-window -h`, `cmd set -g pane-border-frame outer`,
   `cmd select-layout tiled`, `cmd list-panes -F '#{pane_id} #{pane_left}'`.
 - `bin/tmuxlab keys <send-keys args>`: keystrokes to the inner client.
 - `bin/tmuxlab mouse press|release|drag|move|click|wheelup|wheeldown X Y [-b N]`:

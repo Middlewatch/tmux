@@ -595,14 +595,13 @@ server_client_check_mouse_in_pane(struct window_pane *wp, int px, int py,
 {
 	struct window		*w = wp->window;
 	struct window_pane	*fwp;
-	int			 pane_status, sb_w, sb_pad, frame, gap, inside;
+	int			 pane_status, sb_w, sb_pad;
 	int			 pane_status_line, sl_top, sl_bottom;
 	int			 bdr_bottom, bdr_top, bdr_left, bdr_right;
 	int			 sb_start, sb_end, sb_overlay;
 
 	pane_status = window_pane_get_pane_status(wp);
 	sb_overlay = window_pane_scrollbar_overlay(wp);
-	frame = window_get_pane_frame(w);
 
 	if (window_pane_scrollbar_visible(wp)) {
 		sb_w = wp->scrollbar_style.width;
@@ -649,20 +648,8 @@ server_client_check_mouse_in_pane(struct window_pane *wp, int px, int py,
 		return (KEYC_MOUSE_LOCATION_PANE);
 	}
 
-	/*
-	 * With pane-border-frame, window_get_active_at also returns a tiled
-	 * pane for its own left and top frame cells and the gap before them;
-	 * those are borders, not inside the pane.
-	 */
-	if (frame != PANE_FRAME_OFF && !window_pane_is_floating(wp) &&
-	    (px <= bdr_left || py < wp->yoff))
-		inside = 0;
-	else
-		inside = 1;
-
 	/* Check if point is within the pane or scrollbar. */
-	if (inside &&
-	    ((pane_status != PANE_STATUS_OFF &&
+	if (((pane_status != PANE_STATUS_OFF &&
 	    py != pane_status_line && py != wp->yoff + (int)wp->sy) ||
 	    (wp->yoff == 0 && py < (int)wp->sy) ||
 	    (py >= wp->yoff && py < wp->yoff + (int)wp->sy)) &&
@@ -724,34 +711,17 @@ server_client_check_mouse_in_pane(struct window_pane *wp, int px, int py,
 				/* PANE_SCROLLBARS_RIGHT or none. */
 				bdr_right = fwp->xoff + fwp->sx + sb_pad + sb_w;
 			}
-
-			/*
-			 * A tiled pane with pane-border-frame has its own left
-			 * and top frame; with "all" the gap column before the
-			 * left frame is a border too, so a drag can start
-			 * anywhere between two panes.
-			 */
-			if (frame == PANE_FRAME_ALL &&
-			    !window_pane_is_floating(fwp))
-				gap = 1;
-			else
-				gap = 0;
-
-			if (py >= bdr_top && py <= bdr_bottom) {
+			if (py >= fwp->yoff - 1 &&
+			    py <= fwp->yoff + (int)fwp->sy) {
 				if (px == bdr_right)
 					break;
-				if (window_pane_is_floating(wp) ||
-				    (frame != PANE_FRAME_OFF &&
-				    !window_pane_is_floating(fwp))) {
-					/* Check left border. */
+				if (window_pane_is_floating(wp)) {
+					/* Floating pane, check left border. */
 					if (px == bdr_left)
 						break;
 				}
-				if (gap && px == bdr_left - 1)
-					break;
 			}
-			if (px >= bdr_left - gap &&
-			    px <= fwp->xoff + (int)fwp->sx) {
+			if (px >= bdr_left && px <= fwp->xoff + (int)fwp->sx) {
 				bdr_bottom = fwp->yoff + fwp->sy;
 				if (py == bdr_bottom)
 					break;

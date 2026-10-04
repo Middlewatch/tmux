@@ -1,21 +1,22 @@
 # Pane selection and navigation
 
-Clicking a pane makes it active; clicking a frame or gap cell selects the
-pane that owns it. `select-pane -U/-D/-L/-R` moves between neighbours using
-layout geometry, so the frame insets must not break adjacency, and
+Clicking a pane makes it active; clicking a shared divider selects the
+pane that owns it (the pane above a row divider, the pane left of a column
+divider). `select-pane -U/-D/-L/-R` moves between neighbours using layout
+geometry, so the frame insets must not break adjacency, and
 `select-pane -t top-left` and friends must land inside a pane.
 
 ## Sub-features
 
 - `select-click` activates the clicked pane.
-- `select-click-border` activates the owner of a frame or gap cell.
-- `navigate-arrows` moves to the right neighbour across a gap column and to
-  the lower neighbour across adjacent frame rows.
+- `select-click-border` activates the owner of a divider cell.
+- `navigate-arrows` moves to the right neighbour across a column divider
+  and to the lower neighbour across a row divider.
 - `navigate-targets` resolves `top-left`, `bottom-right` and the like.
 
 ## How to get to it (user POV)
 
-- Left-click inside a pane or on its frame.
+- Left-click inside a pane or on a divider.
 - `prefix` with the arrow keys, or `select-pane -L/-R/-U/-D`.
 - `select-pane -t top-left` from the prompt.
 
@@ -28,11 +29,15 @@ Preconditions:
 
 - **Click inside.** Run `bin/tmuxlab mouse click 10 10` then
   `bin/tmuxlab cmd display -p '#{pane_id}'`. Prints `%0`.
-- **Click a frame.** Run `bin/tmuxlab mouse click 42 11` (the top frame of
-  `%2`) then `display -p '#{pane_id}'`. Prints `%2`.
-- **Click the gap.** Run `bin/tmuxlab mouse click 40 5` then
-  `display -p '#{pane_id}'`. Prints `%1`, the pane whose left frame follows
-  the gap.
+- **Click a row divider.** Run `bin/tmuxlab mouse click 42 11` (the divider
+  between `%1` and `%2`) then `display -p '#{pane_id}'`. Prints `%1`, the
+  pane above.
+- **Click a column divider.** Run `bin/tmuxlab mouse click 40 5` then
+  `display -p '#{pane_id}'`. Prints `%0`, the pane on the left.
+- **Click the outer frame.** `mouse click 79 5` prints `%1` and
+  `mouse click 40 22` prints `%0` (a pane's own right and bottom edge). With
+  `%1` active, `mouse click 0 5` and `mouse click 40 0` leave `%1` active:
+  the left and top frame cells belong to no pane.
 - **Arrows.** Run `bin/tmuxlab cmd select-pane -t %0`, then
   `bin/tmuxlab cmd select-pane -R` and `display -p '#{pane_id}'`: `%1`.
   Then `select-pane -D`: `%2`. Then `select-pane -L`: `%0`.
@@ -46,7 +51,8 @@ Preconditions:
 
 - `select-pane -D` from `%0` picks the pane below by layout cell geometry;
   with a single pane on the left there is none, so it stays on `%0`.
-- The outer border frame cells at the window edge belong to the adjacent
-  pane; clicking them selects it.
+- Right and bottom outer frame cells count as the adjacent pane's border
+  (upstream treats a pane's right and bottom edge as its own); left and top
+  frame cells are empty area. Neither resizes anything.
 - Clicking changes which pane later `cmd` calls without `-t` act on; pass
   `-t` when it matters.

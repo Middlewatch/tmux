@@ -43,11 +43,9 @@ schedule.
 
 ## Local patches
 
-- `pane-border-frame off|outer|all`: `outer` adds borders along the window
-  edge so every pane is framed; `all` gives each pane its own frame so the
-  active frame highlights on all sides (`outer-border` branch). Side by
-  side, frames are separated by one gap column drawn as a blank in
-  `pane-border-style`; stacked frames sit on adjacent rows with no gap, so
-  the spacing looks the same both ways on a 2:1 cell font. Every cell
-  between two panes (frame, gap, frame) is a mouse drag handle. Known
-  rough edges are listed in the commit messages.
+- `pane-border-frame off|outer`: `outer` adds a border along the window
+  edge so every pane is framed on all four sides; dividers between panes
+  stay shared as upstream (`outer-border` branch). An `all` mode that gave
+  each pane its own frame with a gap column was built and removed: the
+  owner preferred the tighter shared dividers. Known rough edges are listed
+  in the commit messages.

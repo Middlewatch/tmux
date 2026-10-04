@@ -9,7 +9,7 @@ from the terminal edges, so blank lines need `ECH` instead of `EL`.
 ## Sub-features
 
 - `cost-per-step` measures bytes written per one-cell resize step.
-- `cost-frames` compares `pane-border-frame all` with `off`.
+- `cost-frames` compares `pane-border-frame outer` with `off`.
 - `cost-terminal` shows the dependence on the terminal's `ech` capability.
 
 ## How to get to it (user POV)
@@ -24,21 +24,22 @@ Preconditions:
   '#{client_width}x#{client_height}'`, 280x55 at the time of writing):
   `TMUXLAB=perf bin/tmuxlab up -f ~/.config/tmux/tmux.conf -x 280 -y 55`.
 - One split: `bin/tmuxlab cmd split-window -h`, `sleep 0.3`.
-- `X` is `#{pane_right}` of `%0` plus 1 (the left pane's right frame).
+- `X` is `#{pane_right}` of `%0` plus 1 (the shared divider column).
 
 - **Measure with frames.** Run `bin/tmuxlab bytes start`, `sleep 0.3`,
   `bin/tmuxlab bytes read` (discard), `bin/tmuxlab drag X 20 X-10 20 10`,
   `sleep 0.5`, `bin/tmuxlab bytes read`. Divide by 10. Measured on
-  2026-10-03 with the user's config: about 8.0 KB per step.
+  2026-10-04 with the user's config (`outer`, `single`, drag throttle in):
+  about 6.1 to 6.6 KB per step.
 - **Measure without.** Run `bin/tmuxlab cmd set -g pane-border-frame off`,
   `sleep 0.3`, drag back the other way, `bytes read`, and repeat the
-  measurement. About 2.3 KB per step on the same date.
+  measurement. About 2.4 KB per step on the same date.
 - **Terminal dependence.** Rerun the frames case with
   `TMUXLAB_TERM=tmux-256color` on `up`. Without `ech` the blank pane lines
   are written as spaces: about 23 KB per step at 280x55.
 - **Composition.** After `bytes start` and a single `mouse drag`, copy the
   raw log `/tmp/tmuxlab-$(id -u)/perf/bytes.log` (the lab's state
-  directory, printed by `up`) and count `━`/`┃` glyphs and `\e[...m`
+  directory, printed by `up`) and count `─`/`│` glyphs and `\e[...m`
   sequences to see what dominates; in the frames case colour changes are
   about half and horizontal frame glyphs a quarter.
 - **Proof.** Quote the byte counts per step with the client size, config

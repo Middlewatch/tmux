@@ -13,7 +13,7 @@ binary, then use the matching feature file as the recipe. The recipes use
   `bin/tmuxlab up -v -f ~/.config/tmux/tmux.conf -x 80 -y 24`.
 - The user's config puts the status line on top, so window row N is map
   row N+1. `bin/tmuxlab geom` prints the offset.
-- `bin/tmuxlab doctor` reports `frame: all, lines: heavy` and exits 0.
+- `bin/tmuxlab doctor` reports `frame: outer, lines: single` and exits 0.
 - Only drive labs this run started; never point the harness at the
   user's default socket.
 
@@ -46,8 +46,8 @@ action with an exact command and the observable result), and `Gotchas`.
 
 ## Features
 
-- [Pane frames](./pane-frames.md): `pane-border-frame off|outer|all`
-  rendering, the gap column, stacked frames, and how the gap is styled.
+- [Pane frames](./pane-frames.md): `pane-border-frame off|outer`
+  rendering, shared dividers, and the frame with a pane status line.
 - [Mouse resize](./mouse-resize.md): which cells between two panes start a
   drag-resize, in both axes, and the hit classification behind them.
 - [Pane selection and navigation](./pane-navigation.md): mouse click

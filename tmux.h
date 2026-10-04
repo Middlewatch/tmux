@@ -1554,7 +1554,6 @@ TAILQ_HEAD(winlink_stack, winlink);
 /* Pane border frame option. */
 #define PANE_FRAME_OFF 0
 #define PANE_FRAME_OUTER 1
-#define PANE_FRAME_ALL 2
 
 /* Pane scrollbars option. */
 #define PANE_SCROLLBARS_OFF 0
