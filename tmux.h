@@ -3873,8 +3873,8 @@ void		 layout_assign_pane(struct layout_cell *, struct window_pane *,
 		     int);
 int		 layout_split_check_space(struct window_pane *,
 		     struct layout_cell *, enum layout_type);
-void		 layout_split_sizes(struct layout_cell *, int, int,
-		     enum layout_type, u_int *, u_int *, u_int *);
+void		 layout_split_sizes(struct window_pane *, struct layout_cell *,
+		     int, int, enum layout_type, u_int *, u_int *, u_int *);
 struct layout_cell *layout_replace_with_node(struct window *,
 		     struct layout_cell *, enum layout_type);
 struct layout_cell *layout_split_pane(struct window_pane *, enum layout_type,
@@ -3968,8 +3968,6 @@ extern const struct window_mode window_tree_mode;
 /* window-switch.c */
 extern const struct window_mode window_switch_mode;
 
-/* window-clock.c */
-
 /* window-panes.c */
 extern const struct window_mode window_panes_mode;
 
@@ -3993,8 +3991,6 @@ int		 window_copy_get_current_offset(struct window_pane *, u_int *,
 		     u_int *);
 char		*window_copy_get_hyperlink(struct window_pane *, u_int, u_int);
 void		 window_copy_set_line_numbers(struct window_pane *, int);
-
-/* window-customize.c */
 
 /* names.c */
 void	 check_window_name(struct window *);

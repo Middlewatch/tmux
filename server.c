@@ -370,7 +370,6 @@ server_accept(int fd, short events, __unused void *data)
 	struct sockaddr_storage	 sa;
 	socklen_t		 slen = sizeof sa;
 	int			 newfd;
-	struct client		*c;
 
 	server_add_accept(0);
 	if (!(events & EV_READ))
@@ -392,7 +391,7 @@ server_accept(int fd, short events, __unused void *data)
 		close(newfd);
 		return;
 	}
-	c = server_client_create(newfd);
+	server_client_create(newfd);
 }
 
 /*

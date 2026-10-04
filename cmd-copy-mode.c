@@ -21,7 +21,7 @@
 #include "tmux.h"
 
 /*
- * Enter copy or clock mode.
+ * Enter copy mode.
  */
 
 static enum cmd_retval	cmd_copy_mode_exec(struct cmd *, struct cmdq_item *);
@@ -64,7 +64,6 @@ cmd_copy_mode_exec(struct cmd *self, struct cmdq_item *item)
 		if (c == NULL || c->session != s)
 			return (CMD_RETURN_NORMAL);
 	}
-
 
 	if (args_has(args, 's'))
 		swp = source->wp;
