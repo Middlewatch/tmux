@@ -298,14 +298,13 @@ sleep 1
 must_equal "$(fmt modal:0 '#{window_modal_pane}')" ''
 must_equal "$(fmt modal:0 '#{pane_id}')" "$p0"
 
-$TMUX set -g @modal-custom old
-check_ok customize-mode -t "$p0" \
-	-f '#{==:#{option_name},@modal-custom}'
+check_ok set-buffer -b modal-buffer old
+check_ok choose-buffer -t "$p0"
 panes=$(fmt modal:0 '#{window_panes}')
-$TMUX2 send-keys -t "$OUTER" j Right j e
+$TMUX2 send-keys -t "$OUTER" e
 sleep 1
 editor=$(fmt modal:0 '#{window_modal_pane}')
-[ -n "$editor" ] || fail "customize editor did not open as modal pane"
+[ -n "$editor" ] || fail "buffer editor did not open as modal pane"
 must_equal "$(fmt modal:0 '#{window_panes}')" $((panes + 1))
 must_equal "$(fmt "$editor" '#{pane_modal_flag}:#{pane_active}')" 1:1
 check_ok kill-pane -t "$editor"

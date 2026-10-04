@@ -232,56 +232,19 @@ test_choose_client()
 	assert_alive "choose-client exit"
 }
 
-test_customize_mode()
+test_choose_tree_break_pane()
 {
-	start_client option-a
-
-	i=0
-	while [ "$i" -lt 30 ]; do
-		$TMUX set-option -g "@mode_mut_$i" "$i" || \
-			fail "set option failed"
-		i=$((i + 1))
-	done
-
-	$TMUX customize-mode -t option-a:0 -F 'MO #{option_name}=#{option_value}' || \
-		fail "customize-mode failed"
-	wait_mode option-a:0 1
-	repeat_key option-a:0 j 80
-
-	i=10
-	while [ "$i" -lt 30 ]; do
-		$TMUX set-option -gu "@mode_mut_$i" || fail "unset option failed"
-		i=$((i + 1))
-	done
-	i=30
-	while [ "$i" -lt 55 ]; do
-		$TMUX set-option -g "@mode_mut_$i" "$i" || \
-			fail "new option failed"
-		i=$((i + 1))
-	done
-	$TMUX set-option -g status-left 'mutated' || fail "status-left failed"
-	$TMUX rename-session -t option-a option-renamed || fail "option rename failed"
-
-	assert_alive "customize-mode mutation"
-	$TMUX send-keys -t option-renamed:0 k j C-d C-u q || \
-		fail "customize-mode keys failed"
-	wait_mode option-renamed:0 0
-	assert_alive "customize-mode exit"
-}
-
-test_customize_break_pane()
-{
-	start_client option-break
+	start_client tree-break
 	side=$($TMUX split-window -d -P -F '#{pane_id}' \
-	    -t option-break:0 'cat') || fail "customize split failed"
+	    -t tree-break:0 'cat') || fail "tree split failed"
 
-	$TMUX customize-mode -t "$side" || fail "customize-mode failed"
+	$TMUX choose-tree -t "$side" || fail "choose-tree failed"
 	wait_mode "$side" 1
-	$TMUX break-pane -d -s "$side" || fail "customize break-pane failed"
+	$TMUX break-pane -d -s "$side" || fail "tree break-pane failed"
 
-	assert_alive "customize-mode break-pane"
+	assert_alive "choose-tree break-pane"
 	wait_mode "$side" 1
-	$TMUX send-keys -t "$side" q || fail "customize-mode quit failed"
+	$TMUX send-keys -t "$side" q || fail "choose-tree quit failed"
 	wait_mode "$side" 0
 }
 
@@ -317,8 +280,7 @@ cleanup_servers
 test_choose_tree
 test_choose_buffer
 test_choose_client
-test_customize_mode
-test_customize_break_pane
+test_choose_tree_break_pane
 test_copy_mode
 cleanup
 exit 0

@@ -174,18 +174,16 @@ render_choose_tree()
 	assert_alive "$label choose-tree"
 }
 
-render_customize()
+render_choose_client()
 {
 	label=$1
 	fmt=$2
 
-	tmux_run "$label customize-mode" \
-		customize-mode -t fmt:0 -F "CM$label: $fmt" >/dev/null
-	sleep 0.5
-	out=$(capture)
-	bounded "$label customize-mode capture" "$out"
-	tmux_run "$label quit customize-mode" send-keys -t fmt:0 q >/dev/null
-	assert_alive "$label customize-mode"
+	tmux_run "$label choose-client" \
+		choose-client -t fmt:0 -F "CC$label: $fmt" >/dev/null
+	wait_for "CC$label:"
+	tmux_run "$label quit choose-client" send-keys -t fmt:0 q >/dev/null
+	assert_alive "$label choose-client"
 }
 
 render_list_output()
@@ -219,7 +217,7 @@ run_corpus()
 	render_status_format "$label" "$fmt"
 	render_message "$label" "$fmt"
 	render_choose_tree "$label" "$fmt"
-	render_customize "$label" "$fmt"
+	render_choose_client "$label" "$fmt"
 	render_list_output "$label" "$fmt"
 }
 

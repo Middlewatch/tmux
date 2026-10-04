@@ -31,6 +31,14 @@ schedule.
   attaching an inner tmux inside an outer one and capturing the pane; the
   same trick is the quickest way to eyeball a border or layout change
   without a terminal.
+- Expected regress results: every test passes except
+  `copy-mode-selection-mode.sh`, `copy-mode-selection-scroll.sh` and
+  `format-mouse.sh`, which fail on upstream `596d04a1` as well. A failure
+  outside that set is a regression. The tests for removed features
+  (`clock-mode`, `customize-mode`, `server-access`, `wait-for`) went with
+  the features; the tests that used them as scaffolding were rewritten on
+  `choose-tree`, `choose-client` and `choose-buffer`, except the
+  customize-mode option-mutation case, which has no replacement.
 - Generated files (`configure`, `Makefile.in`, logs) are gitignored; keep
   build logs out of the tree. `.local/` is the unversioned surround;
   verification evidence lands in `.local/verify/`.
