@@ -1592,66 +1592,6 @@ option.
 .D1 Pq alias: Ic rename
 Rename the session to
 .Ar new\-name .
-.It Xo Ic server\-access
-.Op Fl adglrw
-.Op Ar user | group
-.Xc
-Change the access or read/write permission of
-.Ar user
-or
-.Ar group .
-The user running the
-.Nm
-server (its owner) and the root user cannot be changed and are always
-permitted access.
-.Fl g
-changes a group rather than a user.
-.Pp
-.Fl a
-and
-.Fl d
-are used to give or revoke access for the specified user or group.
-If a client is already attached, the
-.Fl d
-flag causes it to be detached unless it is still permitted by another entry.
-.Pp
-.Fl r
-and
-.Fl w
-change the permissions for
-.Ar user
-or
-.Ar group :
-.Fl r
-makes matching clients read-only and
-.Fl w
-writable.
-.Fl l
-lists current access permissions.
-User entries are shown with
-.Ql U ,
-group entries with
-.Ql G ,
-and read-only or writable entries with
-.Ql R
-or
-.Ql W ,
-for example
-.Ql user1 (U,W)
-or
-.Ql testgroup (G,R) .
-If both a user and group entry match a client, the user entry takes
-precedence.
-Only the effective group ID of the client is used, not its supplementary
-groups.
-.Pp
-By default, the access list is empty and
-.Nm
-creates sockets with file system permissions preventing access by any user
-other than the owner (and root).
-These permissions must be changed manually.
-Great care should be taken not to allow access to untrusted users even
-read-only.
 .Tg showmsgs
 .It Xo Ic show\-messages
 .Op Fl JT
@@ -3070,65 +3010,6 @@ bind s 'new-pane -x50% -y50% -E; choose-tree -hks'
 .Pp
 The
 .Ic choose-tree
-command works only if at least one client is attached.
-.It Xo
-.Ic customize\-mode
-.Op Fl kNZ
-.Op Fl F Ar format
-.Op Fl f Ar filter
-.Op Fl t Ar target\-pane
-.Op Ar template
-.Xc
-Put a pane into customize mode, where options and key bindings may be browsed
-and modified from a list.
-Option values in the list are shown for the active pane in the current window.
-.Fl Z
-zooms the pane.
-The following keys may be used in customize mode:
-.Bl -column "KeyXXXXXX" "Function" -offset indent
-.It Sy "Key" Ta Sy "Function"
-.It Li "Enter" Ta "Set pane, window, session or global option value"
-.It Li "Up" Ta "Select previous item"
-.It Li "Down" Ta "Select next item"
-.It Li "+" Ta "Expand selected item"
-.It Li "\-" Ta "Collapse selected item"
-.It Li "M\-+" Ta "Expand all items"
-.It Li "M\-\-" Ta "Collapse all items"
-.It Li "s" Ta "Set option value or key attribute"
-.It Li "S" Ta "Set global option value"
-.It Li "w" Ta "Set window option value, if option is for pane and window"
-.It Li "d" Ta "Set an option or key to the default"
-.It Li "D" Ta "Set tagged options and tagged keys to the default"
-.It Li "e" Ta "Open the value in an editor"
-.It Li "u" Ta "Unset an option (set to default value if global) or unbind a key"
-.It Li "U" Ta "Unset tagged options and unbind tagged keys"
-.It Li "C\-s" Ta "Search by name"
-.It Li "n" Ta "Repeat last search forwards"
-.It Li "N" Ta "Repeat last search backwards"
-.It Li "t" Ta "Toggle if item is tagged"
-.It Li "T" Ta "Tag no items"
-.It Li "C\-t" Ta "Tag all items"
-.It Li "f" Ta "Enter a format to filter items"
-.It Li "c" Ta "Clear the current filter"
-.It Li "v" Ta "Toggle option information"
-.It Li "F1 or C\-h" Ta "Display help"
-.It Li "q" Ta "Exit mode"
-.El
-.Pp
-.Fl f
-specifies an initial filter: the filter is a format - if it evaluates to zero,
-the item in the list is not shown, otherwise it is shown.
-If a filter would lead to an empty list, it is ignored.
-.Fl F
-specifies the format for each item in the tree.
-.Pp
-.Fl N
-starts without the option information.
-.Fl k
-kills the pane when the mode is exited.
-.Pp
-The
-.Ic customize-mode
 command works only if at least one client is attached.
 .It Xo
 .Ic switch\-mode
@@ -5735,14 +5616,6 @@ The format (see
 used when the
 .Ic automatic\-rename
 option is enabled.
-.Pp
-.It Ic clock\-mode\-colour Ar colour
-Set clock colour.
-.Pp
-.It Xo Ic clock\-mode\-style
-.Op Ic 12 | 24 | 12\-with\-seconds | 24\-with\-seconds
-.Xc
-Set clock hour format.
 .Pp
 .It Ic display\-panes\-active\-colour Ar colour
 Set the colour used by the
@@ -8631,8 +8504,6 @@ Display the contents of the specified buffer.
 .Sh MISCELLANEOUS
 Miscellaneous commands are as follows:
 .Bl -tag -width Ds
-.It Ic clock\-mode Op Fl t Ar target\-pane
-Display a large clock.
 .Tg if
 .It Xo Ic if\-shell
 .Op Fl bF
@@ -8727,59 +8598,6 @@ specified by
 .Fl t
 or the current pane if omitted) after the command finishes.
 If the command fails, the exit status is also displayed.
-.Tg wait
-.It Xo Ic wait\-for
-.Op Fl ELSUlv
-.Op Fl F Ar format
-.Op Fl w Ar waiter
-.Ar name
-.Xc
-.D1 Pq alias: Ic wait
-When used without options, prevents the client from exiting until woken using
-.Ic wait\-for
-.Fl S
-with the same channel.
-When
-.Fl L
-is used, the channel is locked and any clients that try to lock the same
-channel are made to wait until the channel is unlocked with
-.Ic wait\-for
-.Fl U .
-.Pp
-With
-.Fl E ,
-.Nm
-waits for the next event with
-.Ar name .
-Events include hook and notification names, and user
-.Ql @
-events generated by
-.Ic set-hook
-.Fl E
-or
-.Ic set-hook
-.Fl B .
-If
-.Fl F
-is given,
-.Ar format
-must also be true.
-If
-.Fl v
-is given, event payload keys are printed (whether or not
-.Ar format
-is true).
-.Pp
-.Fl l
-list the waiters for
-.Ar name
-and
-.Fl w
-wakes
-.Ar waiter
-on
-.Ar name
-immediately.
 .El
 .Sh EXIT MESSAGES
 When a
