@@ -57,3 +57,9 @@ schedule.
   each pane its own frame with a gap column was built and removed: the
   owner preferred the tighter shared dividers. Known rough edges are listed
   in the commit messages.
+- Access control is the socket directory. `/tmp/tmux-<uid>` is created
+  `0700` and every accepted connection becomes a full client; upstream's
+  `server-access` list, which denied other uids by default, is gone
+  (`f399b624`). This is a single-user build: never loosen that directory
+  (an existing one with `g+rwx` is accepted) and never hand a `-S` socket
+  path to another account.
