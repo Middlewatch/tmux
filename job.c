@@ -238,32 +238,6 @@ fail:
 	return (NULL);
 }
 
-/* Take job's file descriptor and free the job. */
-int
-job_transfer(struct job *job, pid_t *pid, char *tty, size_t ttylen)
-{
-	int	fd = job->fd;
-
-	log_debug("transfer job %p: %s", job, job->cmd);
-
-	if (pid != NULL)
-		*pid = job->pid;
-	if (tty != NULL)
-		strlcpy(tty, job->tty, ttylen);
-
-	LIST_REMOVE(job, entry);
-	free(job->cmd);
-
-	if (job->freecb != NULL && job->data != NULL)
-		job->freecb(job->data);
-
-	if (job->event != NULL)
-		bufferevent_free(job->event);
-
-	free(job);
-	return (fd);
-}
-
 /* Kill and free an individual job. */
 void
 job_free(struct job *job)
@@ -284,24 +258,6 @@ job_free(struct job *job)
 		close(job->fd);
 
 	free(job);
-}
-
-/* Resize job. */
-void
-job_resize(struct job *job, u_int sx, u_int sy)
-{
-	struct winsize	 ws;
-
-	if (job->fd == -1 || (~job->flags & JOB_PTY))
-		return;
-
-	log_debug("resize job %p: %ux%u", job, sx, sy);
-
-	memset(&ws, 0, sizeof ws);
-	ws.ws_col = sx;
-	ws.ws_row = sy;
-	if (ioctl(job->fd, TIOCSWINSZ, &ws) == -1)
-		fatal("ioctl failed");
 }
 
 /* Job buffer read callback. */

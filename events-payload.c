@@ -536,13 +536,6 @@ event_payload_item_name(struct event_payload_item *epi)
 	return (epi->name);
 }
 
-/* Get a payload item type. */
-enum event_payload_type
-event_payload_item_type(struct event_payload_item *epi)
-{
-	return (epi->type);
-}
-
 /* Log a payload. */
 void
 event_payload_log(struct event_payload *ep, const char *fmt, ...)
@@ -571,44 +564,6 @@ event_payload_log(struct event_payload *ep, const char *fmt, ...)
 	    (char *)EVBUFFER_DATA(evb));
 	evbuffer_free(evb);
 	free(prefix);
-}
-
-/* Get a time item. */
-time_t
-event_payload_get_time(struct event_payload *ep, const char *name)
-{
-	struct event_payload_item	*epi;
-
-	epi = event_payload_find(ep, name);
-	if (epi == NULL || epi->type != EVENT_PAYLOAD_TIME)
-		return (0);
-	return (epi->time);
-}
-
-/* Get a number item. */
-int
-event_payload_get_int(struct event_payload *ep, const char *name, int *value)
-{
-	struct event_payload_item	*epi;
-
-	epi = event_payload_find(ep, name);
-	if (epi == NULL || epi->type != EVENT_PAYLOAD_INT)
-		return (-1);
-	*value = epi->number;
-	return (0);
-}
-
-/* Get an unsigned number item. */
-int
-event_payload_get_uint(struct event_payload *ep, const char *name, u_int *value)
-{
-	struct event_payload_item	*epi;
-
-	epi = event_payload_find(ep, name);
-	if (epi == NULL || epi->type != EVENT_PAYLOAD_UINT)
-		return (-1);
-	*value = epi->unsigned_number;
-	return (0);
 }
 
 /* Get a client item. */

@@ -1691,32 +1691,6 @@ tty_cmd_deleteline(struct tty *tty, const struct tty_ctx *ctx)
 }
 
 void
-tty_cmd_clearline(struct tty *tty, const struct tty_ctx *ctx)
-{
-	tty_default_attributes(tty, ctx->bg, &ctx->style_ctx);
-
-	tty_clear_pane_line(tty, ctx, ctx->ocy, 0, ctx->sx, ctx->bg);
-}
-
-void
-tty_cmd_clearendofline(struct tty *tty, const struct tty_ctx *ctx)
-{
-	u_int	nx = ctx->sx - ctx->ocx;
-
-	tty_default_attributes(tty, ctx->bg, &ctx->style_ctx);
-
-	tty_clear_pane_line(tty, ctx, ctx->ocy, ctx->ocx, nx, ctx->bg);
-}
-
-void
-tty_cmd_clearstartofline(struct tty *tty, const struct tty_ctx *ctx)
-{
-	tty_default_attributes(tty, ctx->bg, &ctx->style_ctx);
-
-	tty_clear_pane_line(tty, ctx, ctx->ocy, 0, ctx->ocx + 1, ctx->bg);
-}
-
-void
 tty_cmd_reverseindex(struct tty *tty, const struct tty_ctx *ctx)
 {
 	if (ctx->ocy != ctx->orupper)
@@ -1744,45 +1718,6 @@ tty_cmd_reverseindex(struct tty *tty, const struct tty_ctx *ctx)
 		tty_putcode(tty, TTYC_RI);
 	else
 		tty_putcode_i(tty, TTYC_RIN, 1);
-}
-
-void
-tty_cmd_linefeed(struct tty *tty, const struct tty_ctx *ctx)
-{
-	if (ctx->ocy != ctx->orlower)
-		return;
-
-	if ((ctx->flags & TTY_CTX_WINDOW_BIGGER) ||
-	    (!tty_full_width(tty, ctx) && !tty_use_margin(tty)) ||
-	    tty_fake_bce(tty, &ctx->defaults, 8) ||
-	    !tty_term_has(tty->term, TTYC_CSR) ||
-	    ctx->sx == 1 ||
-	    ctx->sy == 1) {
-		tty_redraw_region(tty, ctx);
-		return;
-	}
-
-	tty_default_attributes(tty, ctx->bg, &ctx->style_ctx);
-
-	tty_region_pane(tty, ctx, ctx->orupper, ctx->orlower);
-	tty_margin_pane(tty, ctx);
-
-	/*
-	 * If we want to wrap a pane while using margins, the cursor needs to
-	 * be exactly on the right of the region. If the cursor is entirely off
-	 * the edge - move it back to the right. Some terminals are funny about
-	 * this and insert extra spaces, so only use the right if margins are
-	 * enabled.
-	 */
-	if (ctx->xoff + ctx->ocx > tty->rright) {
-		if (!tty_use_margin(tty))
-			tty_cursor(tty, 0, ctx->yoff + ctx->ocy);
-		else
-			tty_cursor(tty, tty->rright, ctx->yoff + ctx->ocy);
-	} else
-		tty_cursor_pane(tty, ctx, ctx->ocx, ctx->ocy);
-
-	tty_putc(tty, '\n');
 }
 
 void

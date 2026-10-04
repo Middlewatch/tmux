@@ -340,23 +340,6 @@ key_bindings_remove_table(const char *name)
 	}
 }
 
-void
-key_bindings_reset_table(const char *name)
-{
-	struct key_table	*table;
-	struct key_binding	*bd, *bd1;
-
-	table = key_bindings_get_table(name, 0);
-	if (table == NULL)
-		return;
-	if (RB_EMPTY(&table->default_key_bindings)) {
-		key_bindings_remove_table(name);
-		return;
-	}
-	RB_FOREACH_SAFE(bd, key_bindings, &table->key_bindings, bd1)
-		key_bindings_reset(name, bd->key);
-}
-
 static enum cmd_retval
 key_bindings_init_done(__unused struct cmdq_item *item, __unused void *data)
 {

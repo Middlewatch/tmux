@@ -2659,9 +2659,6 @@ int			  sort_would_window_tree_swap(struct sort_criteria *,
 struct paste_buffer	**sort_get_buffers(u_int *, struct sort_criteria *);
 struct client		**sort_get_clients(u_int *, struct sort_criteria *);
 struct session		**sort_get_sessions(u_int *, struct sort_criteria *);
-struct window_pane	**sort_get_panes(u_int *, struct sort_criteria *);
-struct window_pane	**sort_get_panes_session(struct session *, u_int *,
-			      struct sort_criteria *);
 struct window_pane	**sort_get_panes_window(struct window *, u_int *,
 			      struct sort_criteria *);
 struct winlink		**sort_get_winlinks(u_int *, struct sort_criteria *);
@@ -2759,10 +2756,6 @@ void	 event_payload_add_formats(struct event_payload *,
 struct event_payload_item *event_payload_first(struct event_payload *);
 struct event_payload_item *event_payload_next(struct event_payload_item *);
 const char *event_payload_item_name(struct event_payload_item *);
-enum event_payload_type event_payload_item_type(struct event_payload_item *);
-time_t	 event_payload_get_time(struct event_payload *, const char *);
-int	 event_payload_get_int(struct event_payload *, const char *, int *);
-int	 event_payload_get_uint(struct event_payload *, const char *, u_int *);
 struct client *event_payload_get_client(struct event_payload *, const char *);
 struct session *event_payload_get_session(struct event_payload *, const char *);
 struct window *event_payload_get_window(struct event_payload *, const char *);
@@ -2847,8 +2840,6 @@ struct options_entry *options_parse_get(struct options *, const char *,
 		     char **, int);
 const struct options_table_entry *options_search(const char *);
 char		*options_match(const char *, char **, int *);
-struct options_entry *options_match_get(struct options *, const char *,
-		     char **, int, int *);
 const char	*options_get_string(struct options *, const char *);
 long long	 options_get_number(struct options *, const char *);
 struct cmd_list *options_get_command(struct options *, const char *);
@@ -2891,8 +2882,6 @@ struct job	*job_run(const char *, int, char **, struct environ *,
 		     struct session *, const char *, job_update_cb,
 		     job_complete_cb, job_free_cb, void *, int, int, int);
 void		 job_free(struct job *);
-int		 job_transfer(struct job *, pid_t *, char *, size_t);
-void		 job_resize(struct job *, u_int, u_int);
 void		 job_check_died(pid_t, int);
 int		 job_get_status(struct job *);
 void		*job_get_data(struct job *);
@@ -2979,18 +2968,14 @@ void	tty_cmd_alignmenttest(struct tty *, const struct tty_ctx *);
 void	tty_cmd_cell(struct tty *, const struct tty_ctx *);
 void	tty_cmd_cells(struct tty *, const struct tty_ctx *);
 void	tty_cmd_redrawline(struct tty *, const struct tty_ctx *);
-void	tty_cmd_clearendofline(struct tty *, const struct tty_ctx *);
 void	tty_cmd_clearendofscreen(struct tty *, const struct tty_ctx *);
-void	tty_cmd_clearline(struct tty *, const struct tty_ctx *);
 void	tty_cmd_clearscreen(struct tty *, const struct tty_ctx *);
-void	tty_cmd_clearstartofline(struct tty *, const struct tty_ctx *);
 void	tty_cmd_clearstartofscreen(struct tty *, const struct tty_ctx *);
 void	tty_cmd_deletecharacter(struct tty *, const struct tty_ctx *);
 void	tty_cmd_clearcharacter(struct tty *, const struct tty_ctx *);
 void	tty_cmd_deleteline(struct tty *, const struct tty_ctx *);
 void	tty_cmd_insertcharacter(struct tty *, const struct tty_ctx *);
 void	tty_cmd_insertline(struct tty *, const struct tty_ctx *);
-void	tty_cmd_linefeed(struct tty *, const struct tty_ctx *);
 void	tty_cmd_scrollup(struct tty *, const struct tty_ctx *);
 void	tty_cmd_scrolldown(struct tty *, const struct tty_ctx *);
 void	tty_cmd_reverseindex(struct tty *, const struct tty_ctx *);
@@ -3129,7 +3114,6 @@ int		 cmd_find_from_nothing(struct cmd_find_state *, int);
 extern const struct cmd_entry *cmd_table[];
 const struct cmd_entry *cmd_find(const char *, char **);
 void printflike(3, 4) cmd_log_argv(int, char **, const char *, ...);
-void		 cmd_prepend_argv(int *, char ***, const char *);
 void		 cmd_append_argv(int *, char ***, const char *);
 int		 cmd_pack_argv(int, char **, char *, size_t);
 int		 cmd_unpack_argv(char *, size_t, int, char ***);
@@ -3246,7 +3230,6 @@ void	 key_bindings_add(const char *, key_code, const char *, int,
 void	 key_bindings_remove(const char *, key_code);
 void	 key_bindings_reset(const char *, key_code);
 void	 key_bindings_remove_table(const char *);
-void	 key_bindings_reset_table(const char *);
 void	 key_bindings_init(void);
 int	 key_bindings_has_repeat(struct key_binding **, u_int);
 struct cmdq_item *key_bindings_dispatch(struct key_binding *,
@@ -3318,7 +3301,6 @@ int	 server_create_socket(uint64_t, char **);
 /* server-client.c */
 u_int	 server_client_how_many(void);
 void	 server_client_ensure_ranges(struct visible_ranges *, u_int);
-int	 server_client_ranges_is_empty(struct visible_ranges *);
 void	 server_client_set_key_table(struct client *, const char *);
 const char *server_client_get_key_table(struct client *);
 int	 server_client_check_nested(struct client *);
@@ -3686,7 +3668,6 @@ int	 screen_select_cell(struct screen *, struct grid_cell *,
 int	 screen_alternate_on(struct screen *, struct grid_cell *, int);
 int	 screen_alternate_off(struct screen *, struct grid_cell *, int);
 const char *screen_mode_to_string(int);
-const char *screen_print(struct screen *, int);
 
 /* window.c */
 extern struct windows windows;
@@ -3948,9 +3929,7 @@ typedef const char** (*mode_tree_help_cb)(u_int *, const char**);
 u_int	 mode_tree_count_tagged(struct mode_tree_data *);
 void	*mode_tree_get_current(struct mode_tree_data *);
 const char *mode_tree_get_current_name(struct mode_tree_data *);
-void	 mode_tree_select_top(struct mode_tree_data *);
 void	 mode_tree_expand_current(struct mode_tree_data *);
-void	 mode_tree_collapse_current(struct mode_tree_data *);
 void	 mode_tree_expand(struct mode_tree_data *, uint64_t);
 int	 mode_tree_set_current(struct mode_tree_data *, uint64_t);
 void	 mode_tree_each_tagged(struct mode_tree_data *, mode_tree_each_cb,
@@ -3981,7 +3960,6 @@ void	 mode_tree_set_prompt(struct mode_tree_data *, struct client *,
 	     const char *, const char *, enum prompt_type, int,
 	     mode_tree_prompt_input_cb, prompt_free_cb, void *);
 void	 mode_tree_clear_prompt(struct mode_tree_data *);
-int	 mode_tree_has_prompt(struct mode_tree_data *);
 void	 mode_tree_run_command(struct client *, struct cmd_find_state *,
 	     const char *, const char *);
 
@@ -4277,12 +4255,7 @@ char			*json_to_string(struct json_node *);
 struct json_node	*json_find(struct json_node *, const char *);
 struct json_node	*json_array_first(struct json_node *);
 struct json_node	*json_array_next(struct json_node *);
-int			 json_get_string(struct json_node *, const char **);
-int			 json_get_number(struct json_node *, int64_t *);
-int			 json_get_boolean(struct json_node *, int *);
 int			 json_get_object(struct json_node *,
-			     struct json_node **);
-int			 json_get_array(struct json_node *,
 			     struct json_node **);
 int			 json_find_string(struct json_node *, const char *,
 			     const char **, char **);

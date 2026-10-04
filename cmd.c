@@ -250,23 +250,6 @@ cmd_log_argv(int argc, char **argv, const char *fmt, ...)
 	free(prefix);
 }
 
-/* Prepend to an argument vector. */
-void
-cmd_prepend_argv(int *argc, char ***argv, const char *arg)
-{
-	char	**new_argv;
-	int	  i;
-
-	new_argv = xreallocarray(NULL, (*argc) + 1, sizeof *new_argv);
-	new_argv[0] = xstrdup(arg);
-	for (i = 0; i < *argc; i++)
-		new_argv[1 + i] = (*argv)[i];
-
-	free(*argv);
-	*argv = new_argv;
-	(*argc)++;
-}
-
 /* Append to an argument vector. */
 void
 cmd_append_argv(int *argc, char ***argv, const char *arg)

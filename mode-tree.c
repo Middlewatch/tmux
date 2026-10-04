@@ -452,26 +452,10 @@ mode_tree_get_current_name(struct mode_tree_data *mtd)
 }
 
 void
-mode_tree_select_top(struct mode_tree_data *mtd)
-{
-	mtd->current = 0;
-	mtd->offset = 0;
-}
-
-void
 mode_tree_expand_current(struct mode_tree_data *mtd)
 {
 	if (!mtd->line_list[mtd->current].item->expanded) {
 		mtd->line_list[mtd->current].item->expanded = 1;
-		mode_tree_build(mtd);
-	}
-}
-
-void
-mode_tree_collapse_current(struct mode_tree_data *mtd)
-{
-	if (mtd->line_list[mtd->current].item->expanded) {
-		mtd->line_list[mtd->current].item->expanded = 0;
 		mode_tree_build(mtd);
 	}
 }
@@ -1080,12 +1064,6 @@ mode_tree_clear_prompt(struct mode_tree_data *mtd)
 		prompt_free(prompt);
 		mtd->screen.mode &= ~MODE_CURSOR;
 	}
-}
-
-int
-mode_tree_has_prompt(struct mode_tree_data *mtd)
-{
-	return (mtd->prompt != NULL);
 }
 
 static enum cmd_retval

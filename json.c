@@ -203,39 +203,6 @@ json_array_next(struct json_node *member)
 	return (TAILQ_NEXT(member, aentry));
 }
 
-/* Returns the string value from a node. */
-int
-json_get_string(struct json_node *jn, const char **s)
-{
-	if (jn->type != NODE_STRING)
-		return (-1);
-
-	*s = jn->str;
-	return (0);
-}
-
-/* Returns the number value from a node. */
-int
-json_get_number(struct json_node *jn, int64_t *i)
-{
-	if (jn->type != NODE_NUMBER)
-		return (-1);
-
-	*i = jn->num;
-	return (0);
-}
-
-/* Returns the boolean value from a node. */
-int
-json_get_boolean(struct json_node *jn, int *b)
-{
-	if (jn->type != NODE_BOOLEAN)
-		return (-1);
-
-	*b = jn->boolean;
-	return (0);
-}
-
 /* Returns the object value from a node. */
 int
 json_get_object(struct json_node *jn, struct json_node **o)
@@ -244,17 +211,6 @@ json_get_object(struct json_node *jn, struct json_node **o)
 		return (-1);
 
 	*o = jn;
-	return (0);
-}
-
-/* Returns the array value from a node. */
-int
-json_get_array(struct json_node *jn, struct json_node **a)
-{
-	if (jn->type != NODE_ARRAY)
-		return (-1);
-
-	*a = jn;
 	return (0);
 }
 

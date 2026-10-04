@@ -67,19 +67,6 @@ server_client_how_many(void)
 	return (n);
 }
 
-/* Are these ranges empty? That is, nothing is visible. */
-int
-server_client_ranges_is_empty(struct visible_ranges *r)
-{
-	u_int	i;
-
-	for (i = 0; i < r->used; i++) {
-		if (r->ranges[i].nx != 0)
-			return (0);
-	}
-	return (1);
-}
-
 /* Ensure we have space for at least n ranges. */
 void
 server_client_ensure_ranges(struct visible_ranges *r, u_int n)
