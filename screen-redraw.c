@@ -732,9 +732,17 @@ redraw_mark_pane_borders(struct redraw_build_ctx *bctx, struct window_pane *wp,
 	} else {
 		mark_right = (right <= (int)bctx->w->sx);
 		mark_bottom = (bottom <= (int)bctx->w->sy);
-		if (pane_status == PANE_STATUS_TOP && bottom < (int)bctx->w->sy)
+
+		/*
+		 * With a pane status line, the row on the other side of the
+		 * pane is the neighbour's status line and belongs to it. The
+		 * frame row along the window edge (pane-border-frame outer)
+		 * has no neighbour, so it stays with this pane.
+		 */
+		if (pane_status == PANE_STATUS_TOP &&
+		    bottom < (int)bctx->w->sy - 1)
 			mark_bottom = 0;
-		else if (pane_status == PANE_STATUS_BOTTOM)
+		else if (pane_status == PANE_STATUS_BOTTOM && top > 0)
 			mark_top = 0;
 	}
 
