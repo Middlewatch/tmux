@@ -1,3 +1,11 @@
+About this fork: this is Middlewatch's personal fork of tmux/tmux, tracking
+upstream master with a small set of patches on top (pane-border-frame, a
+drag-redraw throttle, and the removal of clock mode, customize mode, wait-for
+and server-access). It is built for the owner's own machines; defaults change
+without notice and there are no releases or support. bin/install builds it and
+installs under ~/.local; AGENTS.md describes the layout and the patches.
+Everything below is upstream's README.
+
 Welcome to tmux!
 
 tmux is a terminal multiplexer: it enables a number of terminals to be created,

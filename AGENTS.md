@@ -10,15 +10,19 @@ schedule.
 
 ## Layout
 
-- `upstream` remote: tmux/tmux master. Local work lives on feature
-  branches (`outer-border` carries the first patch) rebased onto it.
+- `upstream` remote: tmux/tmux master. `origin` is the owner's fork,
+  github.com/Middlewatch/tmux, whose default branch is `outer-border` so a
+  plain clone gives the patched tree. Local work lives on feature branches
+  (`outer-border` carries the patches) rebased onto upstream.
 - Patches stay small, follow upstream's KNF style, and land with a commit
   message that explains the behaviour and names known rough edges, so a
   future rebase can judge each one on its own.
-- The installed binary is `~/.local/bin/tmux` (`make install
-  prefix=$HOME/.local`), shadowing Fedora's `/usr/bin/tmux`, which stays as
-  the fallback. A new server is needed after installing; clients and
-  servers of different versions do not talk.
+- `bin/install [PREFIX]` runs `autogen.sh`, `configure --prefix`, `make`
+  and `make install`, default prefix `~/.local`, so the installed binary is
+  `~/.local/bin/tmux`, shadowing Fedora's `/usr/bin/tmux`, which stays as
+  the fallback. Its header lists the build dependencies. A new server is
+  needed after installing; clients and servers of different versions do
+  not talk.
 
 ## Build and test
 

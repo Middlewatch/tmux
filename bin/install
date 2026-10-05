@@ -1,0 +1,51 @@
+#!/bin/sh
+# Build the tmux fork and install it under a prefix, default ~/.local: the
+# binary in PREFIX/bin and the manual in PREFIX/share/man. Re-running
+# rebuilds and reinstalls. A running server keeps the old binary; start a
+# new server to use the install (clients and servers of different versions
+# do not talk).
+#
+# usage: bin/install [PREFIX]
+#
+# Needs a C compiler, make, autoconf, automake, pkg-config, bison (or
+# another yacc) and the libevent and ncurses headers. On Fedora:
+#   sudo dnf install gcc make autoconf automake pkgconf-pkg-config bison \
+#       libevent-devel ncurses-devel
+# Without root, the inbox note rootless-autotools-build-from-extracted-
+# fedora-rpms has the recipe; configure honours CPPFLAGS and LDFLAGS from
+# the environment.
+set -eu
+cd "$(dirname "$0")/.."
+case ${1:-} in
+-h|--help) sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+esac
+PREFIX=${1:-$HOME/.local}
+
+need() {
+	for tool; do
+		command -v "$tool" >/dev/null 2>&1 ||
+			{ echo "bin/install: missing $tool" >&2; exit 1; }
+	done
+}
+need cc make pkg-config
+command -v bison >/dev/null 2>&1 || command -v yacc >/dev/null 2>&1 ||
+	{ echo "bin/install: missing bison (yacc)" >&2; exit 1; }
+
+# Regenerate configure and Makefile.in whenever the tools are present:
+# mtimes do not show a Makefile.in left behind by an older Makefile.am.
+# Without the tools, a tree that was generated before still builds.
+if command -v autoconf >/dev/null 2>&1 && command -v automake >/dev/null 2>&1; then
+	sh autogen.sh
+elif [ -x configure ] && [ -f Makefile.in ]; then
+	echo "bin/install: no autoconf/automake; using the generated configure as is" >&2
+else
+	need autoconf automake
+fi
+./configure --prefix="$PREFIX"
+make -j"$(nproc 2>/dev/null || echo 2)"
+make install
+printf 'installed: %s ' "$PREFIX/bin/tmux"
+"$PREFIX/bin/tmux" -V
+found=$(command -v tmux || true)
+[ "$found" = "$PREFIX/bin/tmux" ] ||
+	echo "bin/install: PATH finds ${found:-no tmux} ahead of $PREFIX/bin/tmux" >&2
