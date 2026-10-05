@@ -10,10 +10,12 @@ schedule.
 
 ## Layout
 
-- `upstream` remote: tmux/tmux master. `origin` is the owner's fork,
-  github.com/Middlewatch/tmux, whose default branch is `outer-border` so a
-  plain clone gives the patched tree. Local work lives on feature branches
-  (`outer-border` carries the patches) rebased onto upstream.
+- Branches: `master` tracks `upstream` (tmux/tmux) and is never committed
+  to; `main` is the fork, upstream plus the local patches, and the default
+  branch of `origin` (github.com/Middlewatch/tmux) so a plain clone gives
+  the patched tree. Work that is not ready for `main` goes on a feature
+  branch off it, merged or rebased in when it is; a rebase onto a newer
+  upstream replays `main` itself.
 - Patches stay small, follow upstream's KNF style, and land with a commit
   message that explains the behaviour and names known rough edges, so a
   future rebase can judge each one on its own.
@@ -57,7 +59,7 @@ schedule.
 
 - `pane-border-frame off|outer`: `outer` adds a border along the window
   edge so every pane is framed on all four sides; dividers between panes
-  stay shared as upstream (`outer-border` branch). An `all` mode that gave
+  stay shared as upstream (`a11d3318`, `b9c27390`). An `all` mode that gave
   each pane its own frame with a gap column was built and removed: the
   owner preferred the tighter shared dividers. Known rough edges are listed
   in the commit messages.
