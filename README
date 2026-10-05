@@ -1,10 +1,7 @@
-About this fork: this is Middlewatch's personal fork of tmux/tmux, tracking
-upstream master with a small set of patches on top (pane-border-frame, a
-drag-redraw throttle, and the removal of clock mode, customize mode, wait-for
-and server-access). It is built for the owner's own machines; defaults change
-without notice and there are no releases or support. bin/install builds it and
-installs under ~/.local; AGENTS.md describes the layout and the patches.
-Everything below is upstream's README.
+About this fork: this is my personal fork of tmux, tracking
+upstream master with a small set of patches on top. Over time I intend to strip out
+code bloat and hack on my own personal useful features with the overall goal being a leaner
+version of tmux.
 
 Welcome to tmux!
 
