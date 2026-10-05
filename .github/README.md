@@ -1,3 +1,8 @@
+About this fork: this is my personal fork of tmux, tracking
+upstream master with a small set of patches on top. Over time I intend to strip out
+code bloat and hack on my own personal useful features with the overall goal being a leaner
+version of tmux.
+
 # Welcome to tmux!
 
 tmux is a terminal multiplexer: it enables a number of terminals to be created,
