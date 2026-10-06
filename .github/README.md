@@ -4,9 +4,11 @@ code bloat and hack on my own personal useful features with the overall goal bei
 version of tmux.
 
 to install
+```
 dependencies: install gcc make autoconf automake pkgconf-pkg-config bison libevent-devel ncurses-devel
 git clone https://github.com/Middlewatch/tmux ~/projects/tmux
 ~/projects/tmux/bin/install
+```
 
 # Welcome to tmux!
 
