@@ -40,7 +40,9 @@ schedule.
 - Expected regress results: every test passes except
   `copy-mode-selection-mode.sh`, `copy-mode-selection-scroll.sh` and
   `format-mouse.sh`, which fail on upstream `596d04a1` as well. A failure
-  outside that set is a regression. The tests for removed features
+  outside that set is a regression, except that
+  `floating-pane-drag-sb-strip.sh` counts redraws and can fail while other
+  tmux labs or tests run alongside it; re-run it alone first. The tests for removed features
   (`clock-mode`, `customize-mode`, `server-access`, `wait-for`) went with
   the features; the tests that used them as scaffolding were rewritten on
   `choose-tree`, `choose-client` and `choose-buffer`, except the
