@@ -748,7 +748,7 @@ server_client_check_mouse(struct client *c, struct key_event *event)
 	u_int				 x, y, sx, sy, px, py, n, sl_mpos = 0;
 	u_int				 b, bn;
 	int				 ignore = 0;
-	int				 modal_drag = 0;
+	int				 modal_drag = 0, pinned = 0;
 	key_code			 key;
 	struct timeval			 tv;
 	struct style_range		*sr;
@@ -842,6 +842,22 @@ have_event:
 	m->ignore = ignore;
 
 	/*
+	 * A drag that began on a pane or its border stays with that pane and
+	 * location until the button is released. The pointer may cross into a
+	 * neighbouring pane, a divider or the status line meanwhile, but the
+	 * drag updates and the MouseDragEnd key must still reach the pane the
+	 * drag started on: otherwise a copy mode selection released over
+	 * another pane never finishes, and a drag forwarded to a program with
+	 * the mouse on turns into a border resize when it reaches the edge.
+	 */
+	if (lwp != NULL &&
+	    c->tty.mouse_drag_flag != 0 &&
+	    (type == KEYC_TYPE_MOUSEDRAG || type == KEYC_TYPE_MOUSEUP) &&
+	    (c->tty.mouse_drag_loc == KEYC_MOUSE_LOCATION_PANE ||
+	    c->tty.mouse_drag_loc == KEYC_MOUSE_LOCATION_BORDER))
+		pinned = 1;
+
+	/*
 	 * Default the pane-relative position to the event cell. It is only
 	 * recomputed in the KEYC_MOUSE_LOCATION_NOWHERE branch below, but a
 	 * drag starting on the status line or a scrollbar reads px and py when
@@ -853,7 +869,8 @@ have_event:
 	/* Is this on the status line? */
 	m->statusat = status_at_line(c);
 	m->statuslines = status_line_size(c);
-	if (m->statusat != -1 &&
+	if (!pinned &&
+	    m->statusat != -1 &&
 	    y >= (u_int)m->statusat &&
 	    y < m->statusat + m->statuslines) {
 		sr = status_get_range(c, x, y - m->statusat);
@@ -972,6 +989,10 @@ have_event:
 
 		if (modal_drag) {
 			/* Keep the drag with the modal pane. */
+		} else if (pinned) {
+			/* Keep the drag with the pane it started on. */
+			wp = lwp;
+			loc = c->tty.mouse_drag_loc;
 		} else if (type == KEYC_TYPE_MOUSEDRAG && lwp != NULL) {
 			/* Use pane from last mouse event. */
 			wp = lwp;
@@ -984,7 +1005,7 @@ have_event:
 			m->w = w->id;
 			log_debug("mouse %u,%u on empty area", x, y);
 		} else {
-			if (!modal_drag) {
+			if (!modal_drag && !pinned) {
 				loc = server_client_check_mouse_in_pane(wp, px,
 				    py, &sl_mpos);
 			}
@@ -992,7 +1013,12 @@ have_event:
 				log_debug("mouse %u,%u on pane %%%u", x, y,
 				    wp->id);
 			} else if (loc == KEYC_MOUSE_LOCATION_BORDER) {
-				sr = window_pane_status_get_range(wp, px, py);
+				if (pinned)
+					sr = NULL;
+				else {
+					sr = window_pane_status_get_range(wp,
+					    px, py);
+				}
 				if (sr != NULL) {
 					n = sr->argument;
 					loc = KEYC_MOUSE_LOCATION_CONTROL0 + n;
@@ -1089,6 +1115,7 @@ have_event:
 		if (c->tty.mouse_drag_flag == 0) {
 			c->tty.mouse_drag_x = px;
 			c->tty.mouse_drag_y = py;
+			c->tty.mouse_drag_loc = loc;
 		}
 		c->tty.mouse_drag_flag = MOUSE_BUTTONS(b) + 1;
 

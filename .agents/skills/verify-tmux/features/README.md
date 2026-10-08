@@ -50,6 +50,10 @@ action with an exact command and the observable result), and `Gotchas`.
   rendering, shared dividers, and the frame with a pane status line.
 - [Mouse resize](./mouse-resize.md): which cells between two panes start a
   drag-resize, in both axes, and the hit classification behind them.
+- [Mouse drag anchoring](./mouse-drag-anchor.md): a drag started on a pane
+  keeps that pane and location until release, so copy-on-select ends when
+  released over another pane and a mouse-aware program's drag never
+  becomes a border resize.
 - [Pane selection and navigation](./pane-navigation.md): mouse click
   selection on panes and frames, and `select-pane -UDLR` across frames.
 - [Redraw cost](./redraw-cost.md): bytes written per mouse-resize step with

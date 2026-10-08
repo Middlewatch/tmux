@@ -6603,6 +6603,14 @@ for a
 binding, or the pane over which the wheel was scrolled for a
 .Ql WheelDownPane
 binding).
+A drag that starts on a pane or a pane border stays with that pane and
+location until the button is released:
+the
+.Ql MouseDrag
+and
+.Ql MouseDragEnd
+events are delivered to the pane where the button was pressed even if the
+pointer has moved over another pane, a border or the status line.
 .Pp
 The
 .Ic send\-keys
