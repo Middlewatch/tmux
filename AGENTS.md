@@ -71,3 +71,11 @@ schedule.
   (`f399b624`). This is a single-user build: never loosen that directory
   (an existing one with `g+rwx` is accepted) and never hand a `-S` socket
   path to another account.
+- OSC 7501 program status: `input_osc_7501` answers the protocol's `?`
+  query and keeps the root record on `struct screen` beside the OSC 9;4
+  progress bar; `pane_ps_state`, `pane_ps_kind`, `pane_ps_app`,
+  `pane_ps_msg`, `pane_ps_progress` and `window_ps_state` (most pressing
+  pane) expose it to formats and the `pane-program-status` hook fires on
+  change. Child records (`id=`) are dropped, and `working`/`blocked` are
+  dropped on process exit but not on OSC 133 A, because Pi marks its own
+  editor with 133 A. `regress/osc-7501.sh` covers it; expect it to pass.

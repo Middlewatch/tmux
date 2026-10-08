@@ -2639,6 +2639,58 @@ format_cb_pane_pb_state(struct format_tree *ft)
 	return (NULL);
 }
 
+/* Callback for pane_ps_app. */
+static void *
+format_cb_pane_ps_app(struct format_tree *ft)
+{
+	if (ft->wp != NULL && ft->wp->base.program_status.app != NULL)
+		return (xstrdup(ft->wp->base.program_status.app));
+	return (NULL);
+}
+
+/* Callback for pane_ps_kind. */
+static void *
+format_cb_pane_ps_kind(struct format_tree *ft)
+{
+	if (ft->wp != NULL && ft->wp->base.program_status.kind != NULL)
+		return (xstrdup(ft->wp->base.program_status.kind));
+	return (NULL);
+}
+
+/* Callback for pane_ps_msg. */
+static void *
+format_cb_pane_ps_msg(struct format_tree *ft)
+{
+	if (ft->wp != NULL && ft->wp->base.program_status.msg != NULL)
+		return (xstrdup(ft->wp->base.program_status.msg));
+	return (NULL);
+}
+
+/* Callback for pane_ps_progress. */
+static void *
+format_cb_pane_ps_progress(struct format_tree *ft)
+{
+	char	*value = NULL;
+
+	if (ft->wp != NULL && ft->wp->base.program_status.progress >= 0)
+		xasprintf(&value, "%d", ft->wp->base.program_status.progress);
+	return (value);
+}
+
+/* Callback for pane_ps_state. */
+static void *
+format_cb_pane_ps_state(struct format_tree *ft)
+{
+	const char	*name;
+
+	if (ft->wp == NULL)
+		return (NULL);
+	name = program_status_state_name(ft->wp->base.program_status.state);
+	if (name == NULL)
+		return (NULL);
+	return (xstrdup(name));
+}
+
 /* Callback for pane_right. */
 static void *
 format_cb_pane_right(struct format_tree *ft)
@@ -3370,6 +3422,49 @@ format_cb_window_panes(struct format_tree *ft)
 	return (NULL);
 }
 
+/* Rank of a program status state, higher wants the user more. */
+static int
+format_program_status_rank(enum program_status_state state)
+{
+	switch (state) {
+	case PROGRAM_STATUS_NONE:
+		return (0);
+	case PROGRAM_STATUS_IDLE:
+		return (1);
+	case PROGRAM_STATUS_WORKING:
+		return (2);
+	case PROGRAM_STATUS_DONE:
+		return (3);
+	case PROGRAM_STATUS_ERROR:
+		return (4);
+	case PROGRAM_STATUS_BLOCKED:
+		return (5);
+	}
+	return (0);
+}
+
+/* Callback for window_ps_state: the most pressing state over all panes. */
+static void *
+format_cb_window_ps_state(struct format_tree *ft)
+{
+	struct window_pane		*wp;
+	enum program_status_state	 best = PROGRAM_STATUS_NONE, state;
+	const char			*name;
+
+	if (ft->w == NULL)
+		return (NULL);
+	TAILQ_FOREACH(wp, &ft->w->panes, entry) {
+		state = wp->base.program_status.state;
+		if (format_program_status_rank(state) >
+		    format_program_status_rank(best))
+			best = state;
+	}
+	name = program_status_state_name(best);
+	if (name == NULL)
+		return (NULL);
+	return (xstrdup(name));
+}
+
 /* Callback for window_raw_flags. */
 static void *
 format_cb_window_raw_flags(struct format_tree *ft)
@@ -3945,6 +4040,21 @@ static const struct format_table_entry format_table[] = {
 	{ "pane_private_modes", FORMAT_TABLE_STRING,
 	  format_cb_pane_private_modes
 	},
+	{ "pane_ps_app", FORMAT_TABLE_STRING,
+	  format_cb_pane_ps_app
+	},
+	{ "pane_ps_kind", FORMAT_TABLE_STRING,
+	  format_cb_pane_ps_kind
+	},
+	{ "pane_ps_msg", FORMAT_TABLE_STRING,
+	  format_cb_pane_ps_msg
+	},
+	{ "pane_ps_progress", FORMAT_TABLE_STRING,
+	  format_cb_pane_ps_progress
+	},
+	{ "pane_ps_state", FORMAT_TABLE_STRING,
+	  format_cb_pane_ps_state
+	},
 	{ "pane_right", FORMAT_TABLE_STRING,
 	  format_cb_pane_right
 	},
@@ -4202,6 +4312,9 @@ static const struct format_table_entry format_table[] = {
 	},
 	{ "window_panes", FORMAT_TABLE_STRING,
 	  format_cb_window_panes
+	},
+	{ "window_ps_state", FORMAT_TABLE_STRING,
+	  format_cb_window_ps_state
 	},
 	{ "window_raw_flags", FORMAT_TABLE_STRING,
 	  format_cb_window_raw_flags

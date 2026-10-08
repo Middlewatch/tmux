@@ -100,6 +100,7 @@ screen_init(struct screen *s, u_int sx, u_int sy, u_int hlimit)
 
 	s->write_list = NULL;
 	s->hyperlinks = NULL;
+	memset(&s->program_status, 0, sizeof s->program_status);
 
 	screen_reinit(s, 1);
 }
@@ -137,6 +138,7 @@ screen_reinit(struct screen *s, int check)
 #endif
 
 	screen_set_progress_bar(s, PROGRESS_BAR_HIDDEN, 0);
+	screen_clear_program_status(s);
 	screen_reset_hyperlinks(s);
 }
 
@@ -162,6 +164,7 @@ screen_free(struct screen *s)
 	free(s->tabs);
 	free(s->path);
 	free(s->title);
+	screen_clear_program_status(s);
 
 	if (s->write_list != NULL)
 		screen_write_free_list(s);
@@ -346,6 +349,67 @@ screen_set_progress_bar(struct screen *s, enum progress_bar_state pbs, int p)
 	s->progress_bar.state = pbs;
 	if (p >= 0 && pbs != PROGRESS_BAR_INDETERMINATE)
 		s->progress_bar.progress = p;
+}
+
+/* Set program status, taking ownership of the strings in ps. */
+void
+screen_set_program_status(struct screen *s, struct program_status *ps)
+{
+	screen_clear_program_status(s);
+	s->program_status = *ps;
+	memset(ps, 0, sizeof *ps);
+}
+
+/* Clear program status. */
+void
+screen_clear_program_status(struct screen *s)
+{
+	struct program_status	*ps = &s->program_status;
+
+	free(ps->kind);
+	free(ps->app);
+	free(ps->msg);
+	memset(ps, 0, sizeof *ps);
+	ps->progress = -1;
+}
+
+/*
+ * The program attached to the screen has gone away: working and blocked are
+ * no longer true, but done and error stay for the user to find.
+ */
+void
+screen_settle_program_status(struct screen *s)
+{
+	switch (s->program_status.state) {
+	case PROGRAM_STATUS_WORKING:
+	case PROGRAM_STATUS_BLOCKED:
+	case PROGRAM_STATUS_IDLE:
+		screen_clear_program_status(s);
+		break;
+	default:
+		break;
+	}
+}
+
+/* Name of a program status state, or NULL if none. */
+const char *
+program_status_state_name(enum program_status_state state)
+{
+	switch (state) {
+	case PROGRAM_STATUS_NONE:
+		return (NULL);
+	case PROGRAM_STATUS_IDLE:
+		return ("idle");
+	case PROGRAM_STATUS_WORKING:
+		return ("working");
+	case PROGRAM_STATUS_DONE:
+		return ("done");
+	case PROGRAM_STATUS_BLOCKED:
+		return ("blocked");
+	case PROGRAM_STATUS_ERROR:
+		return ("error");
+	}
+	return (NULL);
 }
 
 

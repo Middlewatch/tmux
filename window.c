@@ -1685,6 +1685,9 @@ window_pane_error_callback(__unused struct bufferevent *bufev,
 
 	log_debug("%%%u error", wp->id);
 	wp->flags |= PANE_EXITED;
+	screen_settle_program_status(&wp->base);
+	server_redraw_window_borders(wp->window);
+	server_status_window(wp->window);
 
 	if (window_pane_destroy_ready(wp))
 		server_destroy_pane(wp, 1);

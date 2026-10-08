@@ -1068,6 +1068,23 @@ struct progress_bar {
 	int			progress;
 };
 
+/* Program status, OSC 7501. */
+enum program_status_state {
+	PROGRAM_STATUS_NONE = 0,
+	PROGRAM_STATUS_IDLE,
+	PROGRAM_STATUS_WORKING,
+	PROGRAM_STATUS_DONE,
+	PROGRAM_STATUS_BLOCKED,
+	PROGRAM_STATUS_ERROR
+};
+struct program_status {
+	enum program_status_state	 state;
+	int				 progress; /* -1 if none */
+	char				*kind;
+	char				*app;
+	char				*msg;
+};
+
 /* Virtual screen. */
 struct screen_sel;
 struct screen_titles;
@@ -1111,6 +1128,7 @@ struct screen {
 
 	struct hyperlinks		*hyperlinks;
 	struct progress_bar		 progress_bar;
+	struct program_status		 program_status;
 };
 
 /* Screen write context. */
@@ -3653,6 +3671,10 @@ int	 screen_set_path(struct screen *, const char *, int);
 void	 screen_push_title(struct screen *);
 void	 screen_pop_title(struct screen *);
 void	 screen_set_progress_bar(struct screen *, enum progress_bar_state, int);
+void	 screen_set_program_status(struct screen *, struct program_status *);
+void	 screen_clear_program_status(struct screen *);
+void	 screen_settle_program_status(struct screen *);
+const char *program_status_state_name(enum program_status_state);
 void	 screen_resize(struct screen *, u_int, u_int, int);
 void	 screen_resize_cursor(struct screen *, u_int, u_int, int, int, int);
 void	 screen_set_selection(struct screen *, u_int, u_int, u_int, u_int,

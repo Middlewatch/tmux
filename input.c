@@ -173,6 +173,7 @@ static void	input_osc_110(struct input_ctx *, const char *);
 static void	input_osc_111(struct input_ctx *, const char *);
 static void	input_osc_112(struct input_ctx *, const char *);
 static void	input_osc_133(struct input_ctx *, const char *);
+static void	input_osc_7501(struct input_ctx *, const char *);
 
 /* Transition entry/exit handlers. */
 static void	input_clear(struct input_ctx *);
@@ -2770,6 +2771,9 @@ input_exit_osc(struct input_ctx *ictx)
 	case 133:
 		input_osc_133(ictx, p);
 		break;
+	case 7501:
+		input_osc_7501(ictx, p);
+		break;
 	default:
 		log_debug("%s: unknown '%u'", __func__, option);
 		break;
@@ -3257,6 +3261,189 @@ input_fire_command_event(struct window_pane *wp, const char *name)
 	}
 
 	events_fire(name, ep);
+}
+
+/*
+ * Decode a base64 text value from an OSC 7501 report. The protocol forbids
+ * control characters in the decoded text and makes padding optional.
+ */
+static char *
+input_osc_7501_text(const char *value, size_t maxlen)
+{
+	size_t	 len = strlen(value), padded;
+	char	*copy;
+	u_char	*out;
+	int	 outlen, i;
+
+	if (len == 0 || len > maxlen)
+		return (NULL);
+	padded = (len + 3) & ~(size_t)3;
+	copy = xmalloc(padded + 1);
+	memcpy(copy, value, len);
+	memset(copy + len, '=', padded - len);
+	copy[padded] = '\0';
+
+	out = xmalloc(padded / 4 * 3 + 1);
+	outlen = b64_pton(copy, out, padded / 4 * 3);
+	free(copy);
+	if (outlen == -1)
+		goto bad;
+	for (i = 0; i < outlen; i++) {
+		if (out[i] < 0x20 || out[i] == 0x7f)
+			goto bad;
+		if (out[i] == 0xc2 && i + 1 < outlen && out[i + 1] <= 0x9f)
+			goto bad;
+	}
+	out[outlen] = '\0';
+	if (!utf8_isvalid((char *)out))
+		goto bad;
+	return ((char *)out);
+
+bad:
+	free(out);
+	return (NULL);
+}
+
+/* Is this a valid OSC 7501 value: only [A-Za-z0-9_.,+/=-]? */
+static int
+input_osc_7501_value_ok(const char *value, size_t maxlen)
+{
+	const char	*cp;
+
+	if (strlen(value) > maxlen)
+		return (0);
+	for (cp = value; *cp != '\0'; cp++) {
+		if (!isalnum((u_char)*cp) && strchr("_.,+/=-", *cp) == NULL)
+			return (0);
+	}
+	return (1);
+}
+
+/*
+ * Handle the OSC 7501 program status sequence. Only the root record is kept:
+ * a report that names a child record (id=...) is dropped.
+ */
+static void
+input_osc_7501(struct input_ctx *ictx, const char *p)
+{
+	struct window_pane	*wp = ictx->wp;
+	struct screen		*s = ictx->ctx.s;
+	struct program_status	 ps;
+	char			*copy, *pair, *next, *key, *value, *end;
+	const char		*errstr;
+	long long		 n;
+	int			 have_state = 0, clear = 0;
+
+	if (strcmp(p, "?") == 0) {
+		input_reply(ictx, 1, "\033]7501;?%s",
+		    ictx->input_end == INPUT_END_BEL ? "\007" : "\033\\");
+		return;
+	}
+	if (wp == NULL || strlen(p) > 4096)
+		return;
+
+	memset(&ps, 0, sizeof ps);
+	ps.progress = -1;
+
+	copy = xstrdup(p);
+	for (pair = copy; pair != NULL; pair = next) {
+		if ((next = strchr(pair, ':')) != NULL)
+			*next++ = '\0';
+		if ((value = strchr(pair, '=')) == NULL)
+			continue;
+		*value++ = '\0';
+
+		key = pair;
+		while (isspace((u_char)*key))
+			key++;
+		end = key + strlen(key);
+		while (end > key && isspace((u_char)end[-1]))
+			*--end = '\0';
+		while (isspace((u_char)*value))
+			value++;
+		end = value + strlen(value);
+		while (end > value && isspace((u_char)end[-1]))
+			*--end = '\0';
+
+		if (*key == '\0' || strlen(key) > 16)
+			continue;
+		for (end = key; *end != '\0'; end++) {
+			if (*end < 'a' || *end > 'z')
+				break;
+		}
+		if (*end != '\0' || !input_osc_7501_value_ok(value, 2732))
+			continue;
+
+		if (strcmp(key, "state") == 0) {
+			have_state = 1;
+			if (strcmp(value, "idle") == 0)
+				ps.state = PROGRAM_STATUS_IDLE;
+			else if (strcmp(value, "working") == 0)
+				ps.state = PROGRAM_STATUS_WORKING;
+			else if (strcmp(value, "done") == 0)
+				ps.state = PROGRAM_STATUS_DONE;
+			else if (strcmp(value, "blocked") == 0)
+				ps.state = PROGRAM_STATUS_BLOCKED;
+			else if (strcmp(value, "error") == 0)
+				ps.state = PROGRAM_STATUS_ERROR;
+			else if (strcmp(value, "clear") == 0)
+				clear = 1;
+			else
+				goto bad;
+		} else if (strcmp(key, "id") == 0) {
+			log_debug("%s: child record ignored: %s", __func__, p);
+			goto out;
+		} else if (strcmp(key, "kind") == 0) {
+			free(ps.kind);
+			ps.kind = NULL;
+			if (strcmp(value, "permission") == 0 ||
+			    strcmp(value, "question") == 0 ||
+			    strcmp(value, "auth") == 0)
+				ps.kind = xstrdup(value);
+		} else if (strcmp(key, "progress") == 0) {
+			n = strtonum(value, 0, 100, &errstr);
+			ps.progress = (errstr == NULL) ? (int)n : -1;
+		} else if (strcmp(key, "app") == 0) {
+			free(ps.app);
+			ps.app = NULL;
+			if (strlen(value) <= 32 && strspn(value,
+			    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+			    "abcdefghijklmnopqrstuvwxyz0123456789_.+-") ==
+			    strlen(value))
+				ps.app = xstrdup(value);
+		} else if (strcmp(key, "msg") == 0) {
+			free(ps.msg);
+			if ((ps.msg = input_osc_7501_text(value, 2732)) == NULL)
+				goto bad;
+		}
+	}
+	if (!have_state)
+		goto bad;
+
+	if (clear)
+		screen_clear_program_status(s);
+	else {
+		if (ps.state != PROGRAM_STATUS_BLOCKED) {
+			free(ps.kind);
+			ps.kind = NULL;
+		}
+		if (ps.state != PROGRAM_STATUS_WORKING &&
+		    ps.state != PROGRAM_STATUS_BLOCKED)
+			ps.progress = -1;
+		screen_set_program_status(s, &ps);
+	}
+	server_redraw_window_borders(wp->window);
+	server_status_window(wp->window);
+	events_fire_pane("pane-program-status", wp);
+	goto out;
+
+bad:
+	log_debug("bad OSC 7501 %s", p);
+out:
+	free(ps.kind);
+	free(ps.app);
+	free(ps.msg);
+	free(copy);
 }
 
 /* Handle the OSC 133 sequence. */

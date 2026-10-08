@@ -1986,6 +1986,8 @@ const struct options_table_entry options_table[] = {
 	    "Run when a pane exits a mode."),
 	OPTIONS_TABLE_PANE_HOOK("pane-moved", "",
 	    "Run when a pane is moved to another window."),
+	OPTIONS_TABLE_PANE_HOOK("pane-program-status", "",
+	    "Run when a pane's program status changes through OSC 7501."),
 	OPTIONS_TABLE_PANE_HOOK("pane-prompt-closed", "",
 	    "Run when a prompt in a pane is closed."),
 	OPTIONS_TABLE_PANE_HOOK("pane-prompt-opened", "",
