@@ -19,8 +19,8 @@ schedule.
 - Patches stay small, follow upstream's KNF style, and land with a commit
   message that explains the behaviour and names known rough edges, so a
   future rebase can judge each one on its own.
-- `bin/install [PREFIX]` runs `autogen.sh`, `configure --prefix`, `make`
-  and `make install`, default prefix `~/.local`, so the installed binary is
+- `bin/install [PREFIX]` runs `autogen.sh`, `configure --prefix
+  --enable-sixel`, `make` and `make install`, default prefix `~/.local`, so the installed binary is
   `~/.local/bin/tmux`, shadowing Fedora's `/usr/bin/tmux`, which stays as
   the fallback. Its header lists the build dependencies. A new server is
   needed after installing; clients and servers of different versions do

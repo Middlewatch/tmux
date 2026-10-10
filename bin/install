@@ -41,7 +41,9 @@ elif [ -x configure ] && [ -f Makefile.in ]; then
 else
 	need autoconf automake
 fi
-./configure --prefix="$PREFIX"
+# --enable-sixel: without it tmux discards sixel images drawn inside a pane
+# (#{sixel_support} reports 0), which breaks image previews over ssh.
+./configure --prefix="$PREFIX" --enable-sixel
 make -j"$(nproc 2>/dev/null || echo 2)"
 make install
 printf 'installed: %s ' "$PREFIX/bin/tmux"
