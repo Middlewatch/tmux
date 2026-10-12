@@ -6042,7 +6042,10 @@ format_replace_expression(struct format_modifier *mexp,
 	}
 	if (use_fp)
 		xasprintf(&value, "%.*f", prec, result);
-	else
+	else if (!isfinite(result)) {
+		format_log(es, "expression result is not finite");
+		goto fail;
+	} else
 		xasprintf(&value, "%.*f", prec, (double)(long long)result);
 	format_log(es, "expression result is %s", value);
 

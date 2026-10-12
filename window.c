@@ -287,7 +287,7 @@ winlink_add(struct winlinks *wwl, int idx)
 	struct winlink	*wl;
 
 	if (idx < 0) {
-		if ((idx = winlink_next_index(wwl, -idx - 1)) == -1)
+		if ((idx = winlink_next_index(wwl, -(idx + 1))) == -1)
 			return (NULL);
 	} else if (winlink_find_by_index(wwl, idx) != NULL)
 		return (NULL);
