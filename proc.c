@@ -400,8 +400,3 @@ proc_get_peer_uid(struct tmuxpeer *peer)
 	return (peer->uid);
 }
 
-gid_t
-proc_get_peer_gid(struct tmuxpeer *peer)
-{
-	return (peer->gid);
-}

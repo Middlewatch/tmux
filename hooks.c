@@ -278,18 +278,6 @@ hooks_is_event(const char *name)
 	return (0);
 }
 
-/* Return if an event name can be fired through the hooks path. */
-int
-hooks_valid_event_name(const char *name)
-{
-	const struct options_table_entry	*oe;
-
-	if (*name == '@')
-		return (1);
-	oe = options_search(name);
-	return (oe != NULL && (oe->flags & OPTIONS_TABLE_IS_HOOK));
-}
-
 /* Add hook event sinks for all built-in hooks. */
 void
 hooks_build_events(void)

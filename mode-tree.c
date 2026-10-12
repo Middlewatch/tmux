@@ -445,12 +445,6 @@ mode_tree_get_current(struct mode_tree_data *mtd)
 	return (mtd->line_list[mtd->current].item->itemdata);
 }
 
-const char *
-mode_tree_get_current_name(struct mode_tree_data *mtd)
-{
-	return (mtd->line_list[mtd->current].item->name);
-}
-
 void
 mode_tree_expand_current(struct mode_tree_data *mtd)
 {
@@ -765,18 +759,6 @@ void
 mode_tree_view_name(struct mode_tree_data *mtd, const char *name)
 {
 	mtd->view_name = name;
-}
-
-void
-mode_tree_draw_as_parent(struct mode_tree_item *mti)
-{
-	mti->draw_as_parent = 1;
-}
-
-void
-mode_tree_no_tag(struct mode_tree_item *mti)
-{
-	mti->no_tag = 1;
 }
 
 /*

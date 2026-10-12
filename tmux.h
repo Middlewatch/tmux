@@ -2634,7 +2634,6 @@ void	proc_flush_peer(struct tmuxpeer *);
 void	proc_toggle_log(struct tmuxproc *);
 pid_t	proc_fork_and_daemon(int *);
 uid_t	proc_get_peer_uid(struct tmuxpeer *);
-gid_t	proc_get_peer_gid(struct tmuxpeer *);
 
 /* cfg.c */
 extern int cfg_finished;
@@ -2772,9 +2771,6 @@ const char *event_payload_get_string(struct event_payload *, const char *);
 char	*event_payload_print(struct event_payload *, const char *);
 void	 event_payload_add_formats(struct event_payload *,
 	     struct format_tree *, const char *);
-struct event_payload_item *event_payload_first(struct event_payload *);
-struct event_payload_item *event_payload_next(struct event_payload_item *);
-const char *event_payload_item_name(struct event_payload_item *);
 struct client *event_payload_get_client(struct event_payload *, const char *);
 struct session *event_payload_get_session(struct event_payload *, const char *);
 struct window *event_payload_get_window(struct event_payload *, const char *);
@@ -2803,7 +2799,6 @@ char	*format_trim_right(const char *, u_int);
 /* hooks.c */
 void	 hooks_add_event(const char *);
 int	 hooks_is_event(const char *);
-int	 hooks_valid_event_name(const char *);
 void	 hooks_build_events(void);
 void	 hooks_run(struct cmdq_item *, const char *);
 void	 hooks_monitor_add(struct cmdq_item *, struct options *,
@@ -2820,7 +2815,6 @@ time_t	 hooks_monitor_get_fire_time(struct options_entry *);
 /* options.c */
 struct options	*options_create(struct options *);
 void		 options_free(struct options *);
-struct options	*options_get_parent(struct options *);
 void		 options_set_parent(struct options *, struct options *);
 struct options_entry *options_first(struct options *);
 struct options_entry *options_next(struct options_entry *);
@@ -2828,9 +2822,7 @@ struct options_entry *options_empty(struct options *,
 		     const struct options_table_entry *);
 struct options_entry *options_default(struct options *,
 		     const struct options_table_entry *);
-char		*options_default_to_string(const struct options_table_entry *);
 const char	*options_name(struct options_entry *);
-struct options	*options_owner(struct options_entry *);
 void		*options_get_monitor_data(struct options_entry *);
 void		 options_set_monitor_data(struct options_entry *, void *);
 void		 options_hook_fired(struct options_entry *);
@@ -3243,7 +3235,6 @@ struct key_binding *key_bindings_next(struct key_table *, struct key_binding *);
 void	 key_bindings_add(const char *, key_code, const char *, int,
 	     struct cmd_list *);
 void	 key_bindings_remove(const char *, key_code);
-void	 key_bindings_reset(const char *, key_code);
 void	 key_bindings_remove_table(const char *);
 void	 key_bindings_init(void);
 int	 key_bindings_has_repeat(struct key_binding **, u_int);
@@ -3572,8 +3563,6 @@ void	 screen_write_start_callback(struct screen_write_ctx *, struct screen *,
 void	 screen_write_stop(struct screen_write_ctx *);
 void	 screen_write_reset(struct screen_write_ctx *);
 size_t printflike(1, 2) screen_write_strlen(const char *, ...);
-int printflike(7, 8) screen_write_text(struct screen_write_ctx *, u_int, u_int,
-	     u_int, int, const struct grid_cell *, const char *, ...);
 void printflike(3, 4) screen_write_puts(struct screen_write_ctx *,
 	     const struct grid_cell *, const char *, ...);
 void printflike(4, 5) screen_write_nputs(struct screen_write_ctx *,
@@ -3949,7 +3938,6 @@ typedef void (*mode_tree_each_cb)(void *, void *, struct client *, key_code);
 typedef const char** (*mode_tree_help_cb)(u_int *, const char**);
 u_int	 mode_tree_count_tagged(struct mode_tree_data *);
 void	*mode_tree_get_current(struct mode_tree_data *);
-const char *mode_tree_get_current_name(struct mode_tree_data *);
 void	 mode_tree_expand_current(struct mode_tree_data *);
 void	 mode_tree_expand(struct mode_tree_data *, uint64_t);
 int	 mode_tree_set_current(struct mode_tree_data *, uint64_t);
@@ -3970,8 +3958,6 @@ struct mode_tree_item *mode_tree_add(struct mode_tree_data *,
 	     struct mode_tree_item *, void *, uint64_t, const char *,
 	     const char *, int);
 void	 mode_tree_view_name(struct mode_tree_data *, const char *);
-void	 mode_tree_draw_as_parent(struct mode_tree_item *);
-void	 mode_tree_no_tag(struct mode_tree_item *);
 void	 mode_tree_align(struct mode_tree_item *, int);
 void	 mode_tree_remove(struct mode_tree_data *, struct mode_tree_item *);
 void	 mode_tree_draw(struct mode_tree_data *);

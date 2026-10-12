@@ -243,12 +243,6 @@ options_free(struct options *oo)
 	free(oo);
 }
 
-struct options *
-options_get_parent(struct options *oo)
-{
-	return (oo->parent);
-}
-
 void
 options_set_parent(struct options *oo, struct options *parent)
 {
@@ -355,37 +349,6 @@ options_default(struct options *oo, const struct options_table_entry *oe)
 	return (o);
 }
 
-char *
-options_default_to_string(const struct options_table_entry *oe)
-{
-	char	*s;
-
-	switch (oe->type) {
-	case OPTIONS_TABLE_STRING:
-	case OPTIONS_TABLE_COMMAND:
-		s = xstrdup(oe->default_str);
-		break;
-	case OPTIONS_TABLE_NUMBER:
-		xasprintf(&s, "%lld", oe->default_num);
-		break;
-	case OPTIONS_TABLE_KEY:
-		s = xstrdup(key_string_lookup_key(oe->default_num, 0));
-		break;
-	case OPTIONS_TABLE_COLOUR:
-		s = xstrdup(colour_tostring(oe->default_num));
-		break;
-	case OPTIONS_TABLE_FLAG:
-		s = xstrdup(oe->default_num ? "on" : "off");
-		break;
-	case OPTIONS_TABLE_CHOICE:
-		s = xstrdup(oe->choices[oe->default_num]);
-		break;
-	default:
-		fatalx("unknown option type");
-	}
-	return (s);
-}
-
 static struct options_entry *
 options_add(struct options *oo, const char *name)
 {
@@ -423,12 +386,6 @@ const char *
 options_name(struct options_entry *o)
 {
 	return (o->name);
-}
-
-struct options *
-options_owner(struct options_entry *o)
-{
-	return (o->owner);
 }
 
 void *

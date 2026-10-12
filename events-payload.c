@@ -515,27 +515,6 @@ event_payload_add_formats(struct event_payload *ep, struct format_tree *ft,
 	}
 }
 
-/* Get the first payload item. */
-struct event_payload_item *
-event_payload_first(struct event_payload *ep)
-{
-	return (RB_MIN(event_payload_tree, &ep->items));
-}
-
-/* Get the next payload item. */
-struct event_payload_item *
-event_payload_next(struct event_payload_item *epi)
-{
-	return (RB_NEXT(event_payload_tree, , epi));
-}
-
-/* Get a payload item name. */
-const char *
-event_payload_item_name(struct event_payload_item *epi)
-{
-	return (epi->name);
-}
-
 /* Log a payload. */
 void
 event_payload_log(struct event_payload *ep, const char *fmt, ...)
