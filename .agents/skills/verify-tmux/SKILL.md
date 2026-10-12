@@ -26,7 +26,10 @@ bin/tmuxlab up -v -f ~/.config/tmux/tmux.conf -x 120 -y 40
 
 - `-f CONF` sources the user's config (outer frame, single lines, mouse on,
   status at top). Without `-f` the inner runs bare defaults plus the lab
-  settings; set `pane-border-frame` yourself in that case.
+  settings; set `pane-border-frame` yourself in that case. The user's
+  `tmux-layout` hooks are live under `-f`; `up` points them at
+  `<state>/layout.tmux` so the lab neither restores nor overwrites the
+  real `~/.local/state/tmux/layout.tmux`.
 - `-v` starts the inner server with debug logging. `where` and `log`
   need it; everything else works without.
 - `-x/-y` size the client. Use the user's real size (280x55 at the time
