@@ -3674,6 +3674,8 @@ void	 screen_set_progress_bar(struct screen *, enum progress_bar_state, int);
 void	 screen_set_program_status(struct screen *, struct program_status *);
 void	 screen_clear_program_status(struct screen *);
 void	 screen_settle_program_status(struct screen *);
+int	 program_status_equal(const struct program_status *,
+	     const struct program_status *);
 const char *program_status_state_name(enum program_status_state);
 void	 screen_resize(struct screen *, u_int, u_int, int);
 void	 screen_resize_cursor(struct screen *, u_int, u_int, int, int, int);

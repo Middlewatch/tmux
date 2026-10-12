@@ -391,6 +391,27 @@ screen_settle_program_status(struct screen *s)
 	}
 }
 
+/* Compare two optional strings. */
+static int
+program_status_string_equal(const char *a, const char *b)
+{
+	if (a == NULL || b == NULL)
+		return (a == b);
+	return (strcmp(a, b) == 0);
+}
+
+/* Are two program status records the same? */
+int
+program_status_equal(const struct program_status *a,
+    const struct program_status *b)
+{
+	return (a->state == b->state &&
+	    a->progress == b->progress &&
+	    program_status_string_equal(a->kind, b->kind) &&
+	    program_status_string_equal(a->app, b->app) &&
+	    program_status_string_equal(a->msg, b->msg));
+}
+
 /* Name of a program status state, or NULL if none. */
 const char *
 program_status_state_name(enum program_status_state state)

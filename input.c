@@ -3321,7 +3321,9 @@ input_osc_7501_value_ok(const char *value, size_t maxlen)
 
 /*
  * Handle the OSC 7501 program status sequence. Only the root record is kept:
- * a report that names a child record (id=...) is dropped.
+ * a report that names a child record (id=...) is dropped. A report that
+ * matches the stored record changes nothing, so it neither redraws nor
+ * fires the hook: programs re-send the same record freely.
  */
 static void
 input_osc_7501(struct input_ctx *ictx, const char *p)
@@ -3420,9 +3422,11 @@ input_osc_7501(struct input_ctx *ictx, const char *p)
 	if (!have_state)
 		goto bad;
 
-	if (clear)
+	if (clear) {
+		if (s->program_status.state == PROGRAM_STATUS_NONE)
+			goto out;
 		screen_clear_program_status(s);
-	else {
+	} else {
 		if (ps.state != PROGRAM_STATUS_BLOCKED) {
 			free(ps.kind);
 			ps.kind = NULL;
@@ -3430,6 +3434,8 @@ input_osc_7501(struct input_ctx *ictx, const char *p)
 		if (ps.state != PROGRAM_STATUS_WORKING &&
 		    ps.state != PROGRAM_STATUS_BLOCKED)
 			ps.progress = -1;
+		if (program_status_equal(&ps, &s->program_status))
+			goto out;
 		screen_set_program_status(s, &ps);
 	}
 	server_redraw_window_borders(wp->window);

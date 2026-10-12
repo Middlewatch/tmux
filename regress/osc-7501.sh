@@ -122,4 +122,16 @@ $TMUX set-hook -g pane-program-status "set -gF @hook 'fired:#{hook_pane}'"
 report 'state=idle'
 check hook "fired:$P" '#{@hook}'
 
+# a report that matches the stored record is dropped without the hook, and a
+# clear of an empty record likewise
+$TMUX set -g @hook unfired
+report 'state=idle'
+check hook-unchanged unfired '#{@hook}'
+report 'state=idle:app=pi'
+check hook-changed "fired:$P" '#{@hook}'
+report 'state=clear'
+$TMUX set -g @hook unfired
+report 'state=clear'
+check hook-clear-empty unfired '#{@hook}'
+
 exit 0
