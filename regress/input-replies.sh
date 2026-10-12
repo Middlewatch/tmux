@@ -44,6 +44,21 @@ query()
 	cmp "$TMP" "$EXP" || fail "$name"
 }
 
+# Like query, but the reply is read until it stops and matched against an
+# extended regular expression, for replies that differ between builds.
+query_match()
+{
+	name=$1
+	pattern=$2
+	seq=$3
+
+	$TMUX respawn-window -k -t replies:0 \
+	    "stty raw -echo min 0 time 5; printf '$seq'; sleep 0.1; dd bs=1 count=128 2>/dev/null | cat -v >$TMP"
+	sleep 1
+	printf "%s\n" "$pattern" >"$EXP"
+	grep -qxE "$pattern" "$TMP" || fail "$name"
+}
+
 query_timeout()
 {
 	name=$1
@@ -60,7 +75,8 @@ query_timeout()
 
 query "dsr-ok" '^[[0n' '\033[5n' 4 ''
 query "dsr-cursor" '^[[1;1R' '\033[6n' 6 ''
-query "da-primary" '^[[?1;2c' '\033[c' 7 ''
+# DA1 adds ;4 (sixel) on a --enable-sixel build
+query_match "da-primary" '\^\[\[\?1;2(;4)?c' '\033[c'
 query "da-secondary" '^[[>84;0;0c' '\033[>c' 10 ''
 query "decrqm-irm-reset" '^[[4;2$y' '\033[4$p' 7 ''
 query "decrqm-irm-set" '^[[4;1$y' '\033[4$p' 7 '\033[4h'

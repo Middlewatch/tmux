@@ -21,8 +21,8 @@ schedule.
   future rebase can judge each one on its own.
 - `bin/install [PREFIX]` runs `autogen.sh`, `configure --prefix
   --enable-sixel`, `make` and `make install`, default prefix `~/.local`, so the installed binary is
-  `~/.local/bin/tmux`, shadowing Fedora's `/usr/bin/tmux`, which stays as
-  the fallback. Its header lists the build dependencies. A new server is
+  `~/.local/bin/tmux` (no distro tmux is installed beside it). Its header
+  lists the build dependencies. A new server is
   needed after installing; clients and servers of different versions do
   not talk.
 
@@ -39,7 +39,8 @@ schedule.
   without a terminal.
 - Expected regress results: every test passes except
   `copy-mode-selection-mode.sh`, `copy-mode-selection-scroll.sh` and
-  `format-mouse.sh`, which fail on upstream `596d04a1` as well. A failure
+  `format-mouse.sh`, which fail on upstream `596d04a1` as well; the suite
+  passes the same on a plain and an `--enable-sixel` build. A failure
   outside that set is a regression, except that
   `floating-pane-drag-sb-strip.sh` counts redraws and can fail while other
   tmux labs or tests run alongside it; re-run it alone first. The tests for removed features
