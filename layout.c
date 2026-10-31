@@ -470,6 +470,26 @@ layout_pane_insets(struct window *w, struct layout_cell *root,
 }
 
 /*
+ * The columns or rows along type that a cell gives up to the frame
+ * (pane-border-frame outer): side < 0 counts the left or top edge, side > 0
+ * the right or bottom edge, 0 both. A requested pane size grows by this so
+ * the pane itself measures what was asked for.
+ */
+static u_int
+layout_frame_inset(struct window_pane *wp, struct layout_cell *lc,
+    enum layout_type type, int side)
+{
+	struct window	*w = wp->window;
+	int		 status = window_pane_get_pane_status(wp);
+	int		 l, r, t, b;
+
+	layout_pane_insets(w, w->layout_root, lc, status, &l, &r, &t, &b);
+	if (type == LAYOUT_LEFTRIGHT)
+		return ((side <= 0 ? l : 0) + (side >= 0 ? r : 0));
+	return ((side <= 0 ? t : 0) + (side >= 0 ? b : 0));
+}
+
+/*
  * Returns 1 if we need to add an extra line for the pane status line. This is
  * the case for the most upper or lower panes only.
  */
@@ -963,6 +983,9 @@ layout_resize_pane_to(struct window_pane *wp, enum layout_type type,
 	int			change, size;
 
 	lc = wp->layout_cell;
+
+	/* The pane keeps new_size once the frame has its edges. */
+	new_size += layout_frame_inset(wp, lc, type, 0);
 
 	/* Find next parent of the same type. */
 	lcparent = lc->parent;
@@ -1511,6 +1534,10 @@ layout_split_pane(struct window_pane *wp, enum layout_type type, int size,
 	/* Check there is enough space for the two new panes. */
 	if (!layout_split_check_space(wp, lc, type))
 		return (NULL);
+
+	/* The new cell takes the split cell's edge on the side it goes to. */
+	if (size >= 0)
+		size += layout_frame_inset(wp, lc, type, before ? -1 : 1);
 
 	/*
 	 * Calculate new cell sizes. size is the target size or -1 for middle
